@@ -1,0 +1,26 @@
+{
+  "name": "@driftguard/core-engine",
+  "version": "0.1.0",
+  "description": "Core scanning engine for architectural drift detection",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "vitest",
+    "lint": "echo \"Lint not implemented yet\"",
+    "cli": "node dist/cli/index.js"
+  },
+  "dependencies": {
+    "neo4j-driver": "^5.15.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "typescript": "^5.3.3",
+    "vitest": "^2.0.0"
+  },
+  "bin": {
+    "driftguard": "./dist/cli/index.js"
+  }
+}

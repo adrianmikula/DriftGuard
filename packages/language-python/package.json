@@ -1,0 +1,19 @@
+{
+  "name": "@driftguard/language-python",
+  "version": "0.1.0",
+  "description": "Python analyzer module for DriftGuard (stub for Phase 1)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "vitest",
+    "lint": "echo \"Lint not implemented yet\""
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "typescript": "^5.3.3",
+    "vitest": "^2.0.0"
+  }
+}

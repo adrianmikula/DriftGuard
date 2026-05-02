@@ -1,0 +1,100 @@
+import * as vscode from 'vscode';
+import { EngineClient } from '../client/engine-client';
+import { ArchitectureTreeProvider } from '../ui/architecture-tree';
+
+export function registerCommands(
+  context: vscode.ExtensionContext,
+  engineClient: EngineClient,
+  treeProvider: ArchitectureTreeProvider
+) {
+  const scanWorkspaceCommand = vscode.commands.registerCommand(
+    'driftguard.scanWorkspace',
+    async () => {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders) {
+        vscode.window.showErrorMessage('No workspace folder found');
+        return;
+      }
+
+      const workspacePath = workspaceFolders[0].uri.fsPath;
+
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: 'Scanning workspace for architectural drift...',
+          cancellable: false,
+        },
+        async (progress) => {
+          try {
+            const files = await vscode.workspace.findFiles('**/*.{ts,tsx}', '**/node_modules/**');
+            const filePaths = files.map(f => f.fsPath);
+
+            const result = await engineClient.scan({
+              workspacePath,
+              language: 'typescript',
+              files: filePaths,
+            });
+
+            if (result.success) {
+              vscode.window.showInformationMessage(
+                `Scan complete: ${result.metrics.filesScanned} files scanned, ${result.violations.length} violations found`
+              );
+              treeProvider.refresh();
+            } else {
+              vscode.window.showErrorMessage('Scan failed');
+            }
+          } catch (error) {
+            vscode.window.showErrorMessage(`Scan error: ${error}`);
+          }
+        }
+      );
+    }
+  );
+
+  const scanFileCommand = vscode.commands.registerCommand(
+    'driftguard.scanFile',
+    async () => {
+      const activeEditor = vscode.window.activeTextEditor;
+      if (!activeEditor) {
+        vscode.window.showErrorMessage('No active file');
+        return;
+      }
+
+      const filePath = activeEditor.document.uri.fsPath;
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders) {
+        vscode.window.showErrorMessage('No workspace folder found');
+        return;
+      }
+
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: 'Scanning file for architectural drift...',
+          cancellable: false,
+        },
+        async (progress) => {
+          try {
+            const result = await engineClient.scan({
+              workspacePath: workspaceFolders[0].uri.fsPath,
+              language: 'typescript',
+              files: [filePath],
+            });
+
+            if (result.success) {
+              vscode.window.showInformationMessage(
+                `Scan complete: ${result.violations.length} violations found`
+            );
+            } else {
+              vscode.window.showErrorMessage('Scan failed');
+            }
+          } catch (error) {
+            vscode.window.showErrorMessage(`Scan error: ${error}`);
+          }
+        }
+      );
+    }
+  );
+
+  context.subscriptions.push(scanWorkspaceCommand, scanFileCommand);
+}

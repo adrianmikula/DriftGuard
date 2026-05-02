@@ -1,0 +1,50 @@
+{
+  "name": "@driftguard/vscode-extension",
+  "version": "0.1.0",
+  "description": "VS Code extension for DriftGuard",
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "driftguard.scanWorkspace",
+        "title": "DriftGuard: Scan Workspace"
+      },
+      {
+        "command": "driftguard.scanFile",
+        "title": "DriftGuard: Scan Current File"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "driftguard",
+          "title": "DriftGuard"
+        }
+      ]
+    },
+    "views": {
+      "driftguard": [
+        {
+          "id": "driftguardArchitectureView",
+          "name": "Architecture"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "vitest",
+    "lint": "echo \"Lint not implemented yet\""
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.3",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  }
+}
