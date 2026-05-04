@@ -1,9 +1,16 @@
 import { LanguageAnalyzer, ScanContext, GraphModel } from '@driftguard/core-engine';
+import * as path from 'path';
 import { ASTParser, ParsedFile } from './parser/ast-parser';
 import { ImportGraphAnalyzer } from './analyzer/import-graph';
 import { BoundaryChecker } from './analyzer/boundary-checker';
 import { CircularDependencyRule } from './rules/circular-dependency-rule';
 import { BoundaryViolationRule } from './rules/boundary-violation-rule';
+import type { LayerRule } from '@driftguard/core-engine';
+
+export interface AnalyzerConfig {
+  layers: LayerRule[];
+  fileExtensions?: string[];
+}
 
 export class TypeScriptAnalyzer implements LanguageAnalyzer {
   language = 'typescript';
@@ -11,36 +18,21 @@ export class TypeScriptAnalyzer implements LanguageAnalyzer {
   private parser: ASTParser;
   private importGraphAnalyzer: ImportGraphAnalyzer;
   private boundaryChecker: BoundaryChecker;
+  private fileExtensions: Set<string>;
 
-  constructor(tsConfigPath?: string) {
+  constructor(tsConfigPath?: string, config?: AnalyzerConfig) {
     this.parser = new ASTParser(tsConfigPath);
     this.importGraphAnalyzer = new ImportGraphAnalyzer();
     this.boundaryChecker = new BoundaryChecker();
 
-    // Add default layer rules (can be configured later)
-    this.boundaryChecker.addRule({
-      name: 'ui',
-      pattern: '.*src/components/.*',
-      canImport: ['ui', 'shared'],
-      cannotImport: ['data', 'api'],
-    });
-    this.boundaryChecker.addRule({
-      name: 'data',
-      pattern: '.*src/data/.*',
-      canImport: ['data', 'shared'],
-      cannotImport: ['ui'],
-    });
-    this.boundaryChecker.addRule({
-      name: 'api',
-      pattern: '.*src/api/.*',
-      canImport: ['api', 'data', 'shared'],
-      cannotImport: ['ui'],
-    });
-    this.boundaryChecker.addRule({
-      name: 'shared',
-      pattern: '.*src/shared/.*',
-      canImport: ['shared'],
-      cannotImport: [],
+    // Set up file extensions (default to ts/tsx if not provided)
+    this.fileExtensions = new Set(config?.fileExtensions ?? ['ts', 'tsx']);
+
+    if (!config?.layers) {
+      throw new Error('TypeScriptAnalyzer requires layer rules configuration');
+    }
+    config.layers.forEach(rule => {
+      this.boundaryChecker.addRule(rule);
     });
   }
 
@@ -48,43 +40,46 @@ export class TypeScriptAnalyzer implements LanguageAnalyzer {
     // Parse all TypeScript files
     const parsedFiles: ParsedFile[] = [];
     for (const filePath of context.files) {
-      if (filePath.endsWith('.ts') || filePath.endsWith('.tsx')) {
-        try {
-          const parsed = this.parser.parseFile(filePath);
-          parsedFiles.push(parsed);
+      const ext = path.extname(filePath).slice(1);
+      if (!this.fileExtensions.has(ext)) {
+        continue;
+      }
 
-          // Create file node in graph
-          await graph.createFile({
-            id: filePath,
-            path: filePath,
-            language: 'typescript',
-            lastModified: Date.now(), // TODO: Use actual file stats when fs is available
+      try {
+        const parsed = this.parser.parseFile(filePath);
+        parsedFiles.push(parsed);
+
+        // Create file node in graph
+        await graph.createFile({
+          id: filePath,
+          path: filePath,
+          language: 'typescript',
+          lastModified: Date.now(), // TODO: Use actual file stats when fs is available
+        });
+
+        // Create class nodes
+        for (const cls of parsed.classes) {
+          await graph.createClass({
+            id: `${filePath}:${cls.name}`,
+            name: cls.name,
+            file: filePath,
+            isExported: cls.isExported,
           });
-
-          // Create class nodes
-          for (const cls of parsed.classes) {
-            await graph.createClass({
-              id: `${filePath}:${cls.name}`,
-              name: cls.name,
-              file: filePath,
-              isExported: cls.isExported,
-            });
-          }
-
-          // Create function nodes
-          for (const func of parsed.functions) {
-            await graph.createFunction({
-              id: `${filePath}:${func.name}`,
-              name: func.name,
-              file: filePath,
-              isExported: func.isExported,
-              isAsync: func.isAsync,
-            });
-          }
-        } catch (error) {
-          // TODO: Add proper logging when console is available
-          // console.error(`Error parsing file ${filePath}:`, error);
         }
+
+        // Create function nodes
+        for (const func of parsed.functions) {
+          await graph.createFunction({
+            id: `${filePath}:${func.name}`,
+            name: func.name,
+            file: filePath,
+            isExported: func.isExported,
+            isAsync: func.isAsync,
+          });
+        }
+      } catch (error) {
+        // TODO: Add proper logging when console is available
+        // console.error(`Error parsing file ${filePath}:`, error);
       }
     }
 

@@ -1,0 +1,52 @@
+{
+  "layers": [
+    {
+      "name": "ui",
+      "pattern": ".*src/components/.*",
+      "canImport": ["ui", "shared"],
+      "cannotImport": ["data", "api"]
+    },
+    {
+      "name": "data",
+      "pattern": ".*src/data/.*",
+      "canImport": ["data", "shared"],
+      "cannotImport": ["ui"]
+    },
+    {
+      "name": "api",
+      "pattern": ".*src/api/.*",
+      "canImport": ["api", "data", "shared"],
+      "cannotImport": ["ui"]
+    },
+    {
+      "name": "shared",
+      "pattern": ".*src/shared/.*",
+      "canImport": ["shared"],
+      "cannotImport": []
+    }
+  ],
+  "analyzer": {
+    "fileExtensions": ["ts", "tsx"]
+  },
+  "fileDiscovery": {
+    "includePatterns": ["**/*.{ts,tsx}"],
+    "excludePatterns": ["**/node_modules/**", "**/dist/**"]
+  },
+  "rules": {
+    "boundary-violation": {
+      "enabled": true,
+      "severity": "error"
+    },
+    "circular-dependency": {
+      "enabled": true,
+      "severity": "error"
+    }
+  },
+  "database": {
+    "uri": "bolt://localhost:7687"
+  },
+  "engine": {
+    "url": "http://localhost:3000",
+    "timeoutMs": 30000
+  }
+}

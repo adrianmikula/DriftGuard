@@ -1,3 +1,4 @@
+export * from './config';
 export * from './graph/client';
 export * from './graph/model';
 export * from './graph/schema';

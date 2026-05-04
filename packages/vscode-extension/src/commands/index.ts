@@ -1,6 +1,28 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { EngineClient } from '../client/engine-client';
 import { ArchitectureTreeProvider } from '../ui/architecture-tree';
+
+interface WorkspaceConfig {
+  fileDiscovery?: {
+    includePatterns?: string[];
+    excludePatterns?: string[];
+  };
+}
+
+function loadWorkspaceConfig(workspacePath: string): WorkspaceConfig {
+  try {
+    const configPath = path.join(workspacePath, '.driftguard', 'config.json');
+    if (fs.existsSync(configPath)) {
+      const content = fs.readFileSync(configPath, 'utf-8');
+      return JSON.parse(content);
+    }
+  } catch (error) {
+    // Ignore and return defaults
+  }
+  return {};
+}
 
 export function registerCommands(
   context: vscode.ExtensionContext,
@@ -17,6 +39,13 @@ export function registerCommands(
       }
 
       const workspacePath = workspaceFolders[0].uri.fsPath;
+      const config = loadWorkspaceConfig(workspacePath);
+
+      const includePatterns = config.fileDiscovery?.includePatterns || ['**/*.{ts,tsx}'];
+      const excludePatterns = config.fileDiscovery?.excludePatterns || ['**/node_modules/**', '**/dist/**'];
+
+      const includeGlob = includePatterns.join(';');
+      const excludeGlob = excludePatterns.join(';');
 
       await vscode.window.withProgress(
         {
@@ -26,7 +55,7 @@ export function registerCommands(
         },
         async (progress) => {
           try {
-            const files = await vscode.workspace.findFiles('**/*.{ts,tsx}', '**/node_modules/**');
+            const files = await vscode.workspace.findFiles(includeGlob, excludeGlob);
             const filePaths = files.map(f => f.fsPath);
 
             const result = await engineClient.scan({
@@ -84,7 +113,7 @@ export function registerCommands(
             if (result.success) {
               vscode.window.showInformationMessage(
                 `Scan complete: ${result.violations.length} violations found`
-            );
+              );
             } else {
               vscode.window.showErrorMessage('Scan failed');
             }

@@ -26,6 +26,11 @@ export interface Rule {
 
 export class RuleEngine {
   private rules: Map<string, Rule> = new Map();
+  private ruleConfigs: Record<string, { enabled?: boolean; severity?: 'error' | 'warning' | 'info' }>;
+
+  constructor(ruleConfigs?: Record<string, { enabled?: boolean; severity?: 'error' | 'warning' | 'info' }>) {
+    this.ruleConfigs = ruleConfigs || {};
+  }
 
   registerRule(rule: Rule): void {
     this.rules.set(rule.id, rule);
@@ -54,7 +59,22 @@ export class RuleEngine {
   async executeAllRules(context: any): Promise<RuleResult[]> {
     const results: RuleResult[] = [];
     for (const rule of this.rules.values()) {
+      const config = this.ruleConfigs[rule.id];
+
+      // Skip disabled rules
+      if (config?.enabled === false) {
+        continue;
+      }
+
       const result = await rule.check(context);
+
+      // Apply severity override if configured
+      if (config && config.severity) {
+        for (const violation of result.violations) {
+          violation.severity = config.severity;
+        }
+      }
+
       results.push(result);
     }
     return results;

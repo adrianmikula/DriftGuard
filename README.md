@@ -35,6 +35,50 @@ cd ../language-python && npm install
 cd ../vscode-extension && npm install
 ```
 
+### Configuration
+
+DriftGuard uses two configuration files:
+
+1. **`.env`** – Stores sensitive credentials (never commit to git)
+   - `MEMGRAPH_USERNAME` (required)
+   - `MEMGRAPH_PASSWORD` (required)
+   - `MEMGRAPH_URI` (optional; defaults to `bolt://localhost:7687`)
+   - `ENGINE_URL` (optional; defaults to `http://localhost:3000`)
+
+   Copy `.env.example` to `.env` and fill in your credentials.
+
+2. **`.driftguard/config.json`** – Main configuration (committed to repo)
+   - Layer definitions (`layers`)
+   - Analyzer settings (`analyzer.fileExtensions`)
+   - File discovery patterns (`fileDiscovery`)
+   - Rule enablement and severity (`rules`)
+   - Database URI non-sensitive (`database.uri`)
+   - Engine URL (`engine.url`)
+
+   The default config shipped with DriftGuard provides sensible defaults for a typical TypeScript project.
+
+### Running the CLI
+
+```bash
+cd packages/core-engine
+npm run cli <workspace-path> [--config <custom-config-path>]
+```
+
+The CLI loads configuration from the workspace root (or the path specified via `--config`). It requires valid database credentials in the environment (`.env` or exported).
+
+Config precedence: environment variables > `--config` flag > workspace `.driftguard/config.json`.
+
+### VS Code Extension
+
+The extension respects the same configuration file and also supports VS Code workspace settings under the `driftguard.` namespace (e.g., `driftguard.engineUrl`). Settings override config file values.
+
+```json
+// .vscode/settings.json
+{
+  "driftguard.engineUrl": "http://localhost:3000"
+}
+```
+
 ### Building
 
 ```bash
