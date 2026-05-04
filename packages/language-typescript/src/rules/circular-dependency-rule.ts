@@ -1,4 +1,4 @@
-import { Rule, RuleResult, RuleViolation } from '@driftguard/core-engine';
+import { Rule, RuleResult, RuleViolation } from './types';
 import { ImportGraphAnalyzer } from '../analyzer/import-graph';
 import { ParsedFile } from '../parser/ast-parser';
 
@@ -10,6 +10,8 @@ export class CircularDependencyRule implements Rule {
   constructor(private analyzer: ImportGraphAnalyzer) {}
 
   async check(context: { parsedFiles: ParsedFile[] }): Promise<RuleResult> {
+    // Build the import graph from parsed files
+    this.analyzer.buildGraph(context.parsedFiles);
     const cycles = this.analyzer.detectCycles();
 
     if (cycles.length === 0) {

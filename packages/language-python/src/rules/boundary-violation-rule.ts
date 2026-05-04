@@ -1,6 +1,6 @@
 // STUB: Python boundary violation rule - to be implemented in Phase 2
 
-import { Rule, RuleResult } from '@driftguard/core-engine';
+import { Rule, RuleResult } from './types';
 import { BoundaryChecker } from '../analyzer/boundary-checker';
 import { ParsedFile } from '../parser/ast-parser';
 

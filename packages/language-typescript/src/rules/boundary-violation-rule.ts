@@ -1,4 +1,4 @@
-import { Rule, RuleResult, RuleViolation } from '@driftguard/core-engine';
+import { Rule, RuleResult, RuleViolation } from './types';
 import { BoundaryChecker, BoundaryViolation } from '../analyzer/boundary-checker';
 import { ParsedFile } from '../parser/ast-parser';
 

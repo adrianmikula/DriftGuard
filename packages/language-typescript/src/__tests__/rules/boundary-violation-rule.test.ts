@@ -96,7 +96,7 @@ describe('BoundaryViolationRule', () => {
       const result = await rule.check({ parsedFiles: files });
 
       expect(result.passed).toBe(false);
-      expect(result.violations[0].metadata.rule).toBe('application');
+      expect(result.violations[0].metadata?.rule).toBe('application');
     });
 
     it('should handle multiple violations across different files', async () => {

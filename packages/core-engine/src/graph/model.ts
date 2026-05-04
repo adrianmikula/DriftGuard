@@ -17,7 +17,7 @@ export class GraphModel {
       MERGE (f:File {path: $path})
       SET f.id = $id, f.language = $language, f.lastModified = $lastModified
     `;
-    await this.client.executeWrite(query, node);
+    await this.client.executeWrite(query, node as any);
   }
 
   async createClass(node: ClassNode): Promise<void> {
@@ -25,7 +25,7 @@ export class GraphModel {
       MERGE (c:Class {id: $id})
       SET c.name = $name, c.file = $file, c.isExported = $isExported
     `;
-    await this.client.executeWrite(query, node);
+    await this.client.executeWrite(query, node as any);
   }
 
   async createFunction(node: FunctionNode): Promise<void> {
@@ -34,7 +34,7 @@ export class GraphModel {
       SET f.name = $name, f.file = $file, f.isExported = $isExported, f.isAsync = $isAsync
       ${node.class ? ', f.class = $class' : ''}
     `;
-    await this.client.executeWrite(query, node);
+    await this.client.executeWrite(query, node as any);
   }
 
   // Edge operations
@@ -45,7 +45,7 @@ export class GraphModel {
       MERGE (from)-[r:IMPORTS]->(to)
       SET r.isTypeOnly = $isTypeOnly, r.line = $line
     `;
-    await this.client.executeWrite(query, edge);
+    await this.client.executeWrite(query, edge as any);
   }
 
   async createDependsOn(edge: DependsOnEdge): Promise<void> {
@@ -55,7 +55,7 @@ export class GraphModel {
       MERGE (from)-[r:DEPENDS_ON]->(to)
       SET r.strength = $strength
     `;
-    await this.client.executeWrite(query, edge);
+    await this.client.executeWrite(query, edge as any);
   }
 
   // Query operations

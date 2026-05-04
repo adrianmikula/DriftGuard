@@ -1,4 +1,4 @@
-import neo4j, { Driver, Session, Record } from 'neo4j-driver';
+import neo4j, { Driver, Session } from 'neo4j-driver';
 
 export interface GraphClientConfig {
   uri: string;
@@ -24,10 +24,10 @@ export class GraphClient {
     await this.driver.close();
   }
 
-  async executeQuery(query: string, params: Record<string, any> = {}): Promise<Record[]> {
+  async executeQuery(query: string, params: Record<string, any> = {}): Promise<any[]> {
     const session: Session = this.driver.session();
     try {
-      const result = await session.run(query, params);
+      const result = await session.run(query, params as any);
       return result.records;
     } finally {
       await session.close();
@@ -37,7 +37,7 @@ export class GraphClient {
   async executeWrite(query: string, params: Record<string, any> = {}): Promise<void> {
     const session: Session = this.driver.session();
     try {
-      await session.run(query, params);
+      await session.run(query, params as any);
     } finally {
       await session.close();
     }

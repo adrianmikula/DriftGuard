@@ -1,4 +1,5 @@
 import { ParsedFile, ImportStatement } from '../parser/ast-parser';
+import { posix } from 'path';
 
 export interface ImportEdge {
   from: string;
@@ -88,13 +89,18 @@ export class ImportGraphAnalyzer {
   }
 
   private resolveImportPath(fromFile: string, importModule: string): string {
-    // Simplified path resolution
-    // In a real implementation, this would resolve relative imports,
-    // node_modules, and TypeScript path mappings
-    if (importModule.startsWith('.')) {
-      const fromDir = fromFile.substring(0, fromFile.lastIndexOf('/'));
-      return `${fromDir}/${importModule}.ts`;
+    // Simplified path resolution - normalize to absolute, canonical paths
+    if (!importModule.startsWith('.')) {
+      return importModule;
     }
-    return importModule;
+    // Use POSIX paths to maintain forward-slash consistency
+    const fromDir = posix.dirname(fromFile);
+    let combined = posix.join(fromDir, importModule) + '.ts';
+    combined = posix.normalize(combined);
+    // Ensure leading slash for absolute paths
+    if (!combined.startsWith('/')) {
+      combined = '/' + combined;
+    }
+    return combined;
   }
 }

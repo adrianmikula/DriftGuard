@@ -41,18 +41,18 @@ export class ScannerOrchestrator {
 
   async scan(context: ScanContext): Promise<ScanResult> {
     const startTime = Date.now();
-    const analyzer = this.analyzers.get(context.language);
-
-    if (!analyzer) {
-      throw new Error(`No analyzer found for language: ${context.language}`);
-    }
-
     try {
+      const analyzer = this.analyzers.get(context.language);
+      if (!analyzer) {
+        throw new Error(`No analyzer found for language: ${context.language}`);
+      }
+
       // Run language-specific analysis
       await analyzer.analyze(context, this.graph);
 
-      // Execute all rules
-      const violations = await this.ruleEngine.executeAllRules(context);
+      // Execute all rules and filter to only violations (failed rules)
+      const allResults = await this.ruleEngine.executeAllRules(context);
+      const violations = allResults.filter(r => !r.passed);
 
       const duration = Date.now() - startTime;
 

@@ -4,12 +4,12 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 vi.mock('neo4j-driver', async () => await import('../../__mocks__/neo4j-driver'));
 
 import { GraphClient } from '../../graph/client';
-import { resetMocks, getMockDriver, createDriver } from '../../__mocks__/neo4j-driver';
+import { resetMocks, getMockDriver } from '../../__mocks__/neo4j-driver';
 import { createGraphClientConfig } from '../utils';
 
 describe('GraphClient', () => {
   let client: GraphClient;
-  let mockDriver: ReturnType<typeof createDriver>;
+  let mockDriver: ReturnType<typeof getMockDriver>;
 
   beforeEach(() => {
     resetMocks();

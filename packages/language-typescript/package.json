@@ -11,7 +11,8 @@
     "lint": "echo \"Lint not implemented yet\""
   },
   "dependencies": {
-    "ts-morph": "^21.0.0"
+    "ts-morph": "^21.0.0",
+    "@driftguard/core-engine": "file:../core-engine"
   },
   "devDependencies": {
     "@types/node": "^20.10.6",

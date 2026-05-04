@@ -126,24 +126,30 @@ export class ASTParser {
     // Exported functions
     sourceFile.getFunctions().forEach(func => {
       if (func.isExported()) {
-        exports.push({
-          name: func.getName(),
-          isDefault: func.isDefaultExport(),
-          isType: false,
-          line: func.getStartLineNumber(),
-        });
+        const name = func.getName();
+        if (name) {
+          exports.push({
+            name,
+            isDefault: func.isDefaultExport(),
+            isType: false,
+            line: func.getStartLineNumber(),
+          });
+        }
       }
     });
 
     // Exported classes
     sourceFile.getClasses().forEach(cls => {
       if (cls.isExported()) {
-        exports.push({
-          name: cls.getName(),
-          isDefault: cls.isDefaultExport(),
-          isType: false,
-          line: cls.getStartLineNumber(),
-        });
+        const name = cls.getName();
+        if (name) {
+          exports.push({
+            name,
+            isDefault: cls.isDefaultExport(),
+            isType: false,
+            line: cls.getStartLineNumber(),
+          });
+        }
       }
     });
 
@@ -151,78 +157,96 @@ export class ASTParser {
   }
 
   private extractClasses(sourceFile: SourceFile): ClassInfo[] {
-    return sourceFile.getClasses().map(cls => ({
-      name: cls.getName(),
-      isExported: cls.isExported(),
-      isAbstract: cls.isAbstract(),
-      extends: cls.getExtends()?.getText(),
-      implements: cls.getImplements().map(i => i.getText()),
-      methods: cls.getMethods().map(method => ({
-        name: method.getName(),
-        isExported: false,
-        isAsync: method.isAsync(),
-        isStatic: method.isStatic(),
-        parameters: method.getParameters().map(param => ({
-          name: param.getName(),
-          type: param.getType()?.getText(),
-          isOptional: param.isOptional(),
+    const classes: ClassInfo[] = [];
+    for (const cls of sourceFile.getClasses()) {
+      const name = cls.getName();
+      if (!name) continue;
+      classes.push({
+        name,
+        isExported: cls.isExported(),
+        isAbstract: cls.isAbstract(),
+        extends: cls.getExtends()?.getText(),
+        implements: cls.getImplements().map(i => i.getText()),
+        methods: cls.getMethods().map(method => ({
+          name: method.getName() || 'unknown',
+          isExported: false,
+          isAsync: method.isAsync(),
+          isStatic: method.isStatic(),
+          parameters: method.getParameters().map(param => ({
+            name: param.getName(),
+            type: param.getType()?.getText() || 'unknown',
+            isOptional: param.isOptional(),
+          })),
+          returnType: method.getReturnType()?.getText() || 'void',
+          line: method.getStartLineNumber(),
         })),
-        returnType: method.getReturnType()?.getText(),
-        line: method.getStartLineNumber(),
-      })),
-      properties: cls.getProperties().map(prop => ({
-        name: prop.getName(),
-        type: prop.getType()?.getText(),
-        isReadonly: prop.isReadonly(),
-        isStatic: prop.isStatic(),
-        line: prop.getStartLineNumber(),
-      })),
-      line: cls.getStartLineNumber(),
-    }));
+        properties: cls.getProperties().map(prop => ({
+          name: prop.getName(),
+          type: prop.getType()?.getText() || 'unknown',
+          isReadonly: prop.isReadonly(),
+          isStatic: prop.isStatic(),
+          line: prop.getStartLineNumber(),
+        })),
+        line: cls.getStartLineNumber(),
+      });
+    }
+    return classes;
   }
 
   private extractFunctions(sourceFile: SourceFile): FunctionInfo[] {
-    return sourceFile.getFunctions().map(func => ({
-      name: func.getName(),
-      isExported: func.isExported(),
-      isAsync: func.isAsync(),
-      isStatic: false,
-      parameters: func.getParameters().map(param => ({
-        name: param.getName(),
-        type: param.getType()?.getText(),
-        isOptional: param.isOptional(),
-      })),
-      returnType: func.getReturnType()?.getText(),
-      line: func.getStartLineNumber(),
-    }));
+    const functions: FunctionInfo[] = [];
+    for (const func of sourceFile.getFunctions()) {
+      const name = func.getName();
+      if (!name) continue;
+      functions.push({
+        name,
+        isExported: func.isExported(),
+        isAsync: func.isAsync(),
+        isStatic: false,
+        parameters: func.getParameters().map(param => ({
+          name: param.getName(),
+          type: param.getType()?.getText() || 'unknown',
+          isOptional: param.isOptional(),
+        })),
+        returnType: func.getReturnType()?.getText() || 'void',
+        line: func.getStartLineNumber(),
+      });
+    }
+    return functions;
   }
 
   private extractInterfaces(sourceFile: SourceFile): InterfaceInfo[] {
-    return sourceFile.getInterfaces().map(iface => ({
-      name: iface.getName(),
-      isExported: iface.isExported(),
-      extends: iface.getExtends().map(e => e.getText()),
-      properties: iface.getProperties().map(prop => ({
-        name: prop.getName(),
-        type: prop.getType()?.getText(),
-        isReadonly: prop.isReadonly(),
-        isStatic: false,
-        line: prop.getStartLineNumber(),
-      })),
-      methods: iface.getMethods().map(method => ({
-        name: method.getName(),
-        isExported: false,
-        isAsync: false,
-        isStatic: false,
-        parameters: method.getParameters().map(param => ({
-          name: param.getName(),
-          type: param.getType()?.getText(),
-          isOptional: param.isOptional(),
+    const interfaces: InterfaceInfo[] = [];
+    for (const iface of sourceFile.getInterfaces()) {
+      const name = iface.getName();
+      if (!name) continue;
+      interfaces.push({
+        name,
+        isExported: iface.isExported(),
+        extends: iface.getExtends().map(e => e.getText()),
+        properties: iface.getProperties().map(prop => ({
+          name: prop.getName(),
+          type: prop.getType()?.getText() || 'unknown',
+          isReadonly: prop.isReadonly(),
+          isStatic: false,
+          line: prop.getStartLineNumber(),
         })),
-        returnType: method.getReturnType()?.getText(),
-        line: method.getStartLineNumber(),
-      })),
-      line: iface.getStartLineNumber(),
-    }));
+        methods: iface.getMethods().map(method => ({
+          name: method.getName() || 'unknown',
+          isExported: false,
+          isAsync: false,
+          isStatic: false,
+          parameters: method.getParameters().map(param => ({
+            name: param.getName(),
+            type: param.getType()?.getText() || 'unknown',
+            isOptional: param.isOptional(),
+          })),
+          returnType: method.getReturnType()?.getText() || 'void',
+          line: method.getStartLineNumber(),
+        })),
+        line: iface.getStartLineNumber(),
+      });
+    }
+    return interfaces;
   }
 }

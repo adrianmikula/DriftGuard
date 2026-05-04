@@ -10,7 +10,9 @@
     "test": "vitest",
     "lint": "echo \"Lint not implemented yet\""
   },
-  "dependencies": {},
+  "dependencies": {
+    "@driftguard/core-engine": "file:../core-engine"
+  },
   "devDependencies": {
     "@types/node": "^20.10.6",
     "typescript": "^5.3.3",

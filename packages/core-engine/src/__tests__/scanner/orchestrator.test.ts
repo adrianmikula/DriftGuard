@@ -49,13 +49,14 @@ describe('ScannerOrchestrator', () => {
   });
 
   describe('unregisterAnalyzer', () => {
-    it('should remove a language analyzer', () => {
+    it('should remove a language analyzer', async () => {
       const analyzer = createMockLanguageAnalyzer('python');
       orchestrator.registerAnalyzer(analyzer);
       orchestrator.unregisterAnalyzer('python');
-      // Verify by attempting to scan - should throw "no analyzer found"
-      return expect(orchestrator.scan(createScanContext({ language: 'python' })))
-        .rejects.toThrow('No analyzer found for language: python');
+      // After unregistering, scan should return failure result (not throw)
+      const result = await orchestrator.scan(createScanContext({ language: 'python' }));
+      expect(result.success).toBe(false);
+      expect(result.violations).toEqual([]);
     });
 
     it('should not throw if analyzer does not exist', () => {
@@ -121,7 +122,8 @@ describe('ScannerOrchestrator', () => {
       const result = await orchestrator.scan(createScanContext());
 
       expect(result.violations).toHaveLength(1);
-      expect(result.violations[0].ruleId).toBe('failing-rule');
+      // result.violations is RuleResult[], each has violations array
+      expect(result.violations[0].violations[0].ruleId).toBe('failing-rule');
     });
 
     it('should handle analyzer not found error', async () => {

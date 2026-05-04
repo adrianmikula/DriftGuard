@@ -1,17 +1,38 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import * as vscode from 'vscode';
-import { registerCommands } from '../../commands';
-import { EngineClient } from '../../client/engine-client';
-import { ArchitectureTreeProvider } from '../../ui/architecture-tree';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-// Mock the vscode module
+// Inline mock for vscode
 vi.mock('vscode', () => ({
+  EventEmitter: class EventEmitter {
+    readonly event = { _: null } as any;
+    constructor() {}
+    fire(value: any): void {}
+  },
+  TreeItem: class TreeItem {
+    constructor(
+      public label: string,
+      public collapsibleState: any
+    ) {}
+    contextValue?: string;
+    iconPath?: any;
+  },
+  TreeItemCollapsibleState: {
+    Collapsed: 1,
+    Expanded: 2,
+    None: 0,
+  },
+  ThemeIcon: class ThemeIcon {
+    constructor(public id: string) {}
+  },
+  ProgressLocation: {
+    Notification: 1,
+    Window: 2,
+  },
   commands: {
-    registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
+    registerCommand: vi.fn(),
   },
   window: {
-    showErrorMessage: vi.fn(),
     showInformationMessage: vi.fn(),
+    showErrorMessage: vi.fn(),
     withProgress: vi.fn((options, task) => task({} as any)),
     activeTextEditor: null,
   },
@@ -20,6 +41,11 @@ vi.mock('vscode', () => ({
     findFiles: vi.fn(async () => []),
   },
 }));
+
+import * as vscode from 'vscode';
+import { registerCommands } from '../../commands';
+import { EngineClient } from '../../client/engine-client';
+import { ArchitectureTreeProvider } from '../../ui/architecture-tree';
 
 describe('Commands', () => {
   let context: any;

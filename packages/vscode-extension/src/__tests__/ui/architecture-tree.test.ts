@@ -1,18 +1,19 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ArchitectureTreeProvider, type ArchitectureNode } from '../../ui/architecture-tree';
-import { EngineClient } from '../../client/engine-client';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-// Mock vscode module
+// Inline mock for vscode
 vi.mock('vscode', () => ({
+  EventEmitter: class EventEmitter {
+    readonly event = { _: null } as any;
+    constructor() {}
+    fire(value: any): void {}
+  },
   TreeItem: class TreeItem {
-    label: string;
-    collapsibleState: any;
+    constructor(
+      public label: string,
+      public collapsibleState: any
+    ) {}
     contextValue?: string;
     iconPath?: any;
-    constructor(label: string, collapsibleState: any) {
-      this.label = label;
-      this.collapsibleState = collapsibleState;
-    }
   },
   TreeItemCollapsibleState: {
     Collapsed: 1,
@@ -22,7 +23,27 @@ vi.mock('vscode', () => ({
   ThemeIcon: class ThemeIcon {
     constructor(public id: string) {}
   },
+  ProgressLocation: {
+    Notification: 1,
+    Window: 2,
+  },
+  commands: {
+    registerCommand: vi.fn(),
+  },
+  window: {
+    showInformationMessage: vi.fn(),
+    showErrorMessage: vi.fn(),
+    withProgress: vi.fn((options, task) => task({} as any)),
+    activeTextEditor: null,
+  },
+  workspace: {
+    workspaceFolders: null,
+    findFiles: vi.fn(async () => []),
+  },
 }));
+
+import { ArchitectureTreeProvider, type ArchitectureNode } from '../../ui/architecture-tree';
+import { EngineClient } from '../../client/engine-client';
 
 describe('ArchitectureTreeProvider', () => {
   let engineClient: EngineClient;

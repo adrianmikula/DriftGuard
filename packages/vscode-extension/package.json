@@ -37,7 +37,9 @@
     "test": "vitest",
     "lint": "echo \"Lint not implemented yet\""
   },
-  "dependencies": {},
+  "dependencies": {
+    "@driftguard/core-engine": "file:../core-engine"
+  },
   "devDependencies": {
     "@types/node": "^20.10.6",
     "@types/vscode": "^1.85.0",
