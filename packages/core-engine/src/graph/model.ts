@@ -1,8 +1,23 @@
 import { GraphClient } from './client';
-import { NodeType, EdgeType, FileNode, ClassNode, FunctionNode, ImportEdge, DependsOnEdge } from './schema';
+import { FileNode, ClassNode, FunctionNode, ImportEdge, DependsOnEdge } from './schema';
 
 export class GraphModel {
+  private nodesCreated: number = 0;
+  private edgesCreated: number = 0;
+
   constructor(private client: GraphClient) {}
+
+  getMetrics(): { nodesCreated: number; edgesCreated: number } {
+    return {
+      nodesCreated: this.nodesCreated,
+      edgesCreated: this.edgesCreated,
+    };
+  }
+
+  resetMetrics(): void {
+    this.nodesCreated = 0;
+    this.edgesCreated = 0;
+  }
 
   async initializeSchema(): Promise<void> {
     const { SCHEMA_QUERIES } = await import('./schema');
@@ -18,6 +33,7 @@ export class GraphModel {
       SET f.id = $id, f.language = $language, f.lastModified = $lastModified
     `;
     await this.client.executeWrite(query, node as any);
+    this.nodesCreated++;
   }
 
   async createClass(node: ClassNode): Promise<void> {
@@ -26,6 +42,7 @@ export class GraphModel {
       SET c.name = $name, c.file = $file, c.isExported = $isExported
     `;
     await this.client.executeWrite(query, node as any);
+    this.nodesCreated++;
   }
 
   async createFunction(node: FunctionNode): Promise<void> {
@@ -35,6 +52,7 @@ export class GraphModel {
       ${node.class ? ', f.class = $class' : ''}
     `;
     await this.client.executeWrite(query, node as any);
+    this.nodesCreated++;
   }
 
   // Edge operations
@@ -46,6 +64,7 @@ export class GraphModel {
       SET r.isTypeOnly = $isTypeOnly, r.line = $line
     `;
     await this.client.executeWrite(query, edge as any);
+    this.edgesCreated++;
   }
 
   async createDependsOn(edge: DependsOnEdge): Promise<void> {
@@ -56,6 +75,7 @@ export class GraphModel {
       SET r.strength = $strength
     `;
     await this.client.executeWrite(query, edge as any);
+    this.edgesCreated++;
   }
 
   // Query operations

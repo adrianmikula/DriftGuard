@@ -16,7 +16,7 @@ export interface FileDiscoveryConfig {
   excludePatterns: string[];
 }
 
-export interface RuleConfig {
+export interface RuleSettings {
   enabled: boolean;
   severity: 'error' | 'warning' | 'info';
 }
@@ -34,7 +34,7 @@ export interface Config {
   layers: LayerRule[];
   analyzer: AnalyzerConfig;
   fileDiscovery: FileDiscoveryConfig;
-  rules: Record<string, RuleConfig>;
+  rules: Record<string, RuleSettings>;
   database: DatabaseConfig;
   engine: EngineConfig;
 }
@@ -55,7 +55,7 @@ export const FileDiscoveryConfigSchema = z.object({
   excludePatterns: z.array(z.string()).default(['**/node_modules/**', '**/dist/**']),
 });
 
-export const RuleConfigSchema = z.object({
+export const RuleConfigZodSchema = z.object({
   enabled: z.boolean().default(true),
   severity: z.enum(['error', 'warning', 'info']).default('error'),
 });
@@ -73,9 +73,9 @@ export const ConfigSchema = z.object({
   layers: z.array(LayerRuleSchema),
   analyzer: AnalyzerConfigSchema,
   fileDiscovery: FileDiscoveryConfigSchema,
-  rules: z.record(RuleConfigSchema),
+  rules: z.record(RuleConfigZodSchema),
   database: DatabaseConfigSchema,
   engine: EngineConfigSchema,
 });
 
-export type { LayerRule, AnalyzerConfig, FileDiscoveryConfig, RuleConfig, DatabaseConfig, EngineConfig, Config };
+

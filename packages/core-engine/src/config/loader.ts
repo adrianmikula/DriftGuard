@@ -60,9 +60,10 @@ export class ConfigLoader {
   private resolveConfigPath(): string | undefined {
     // If explicit config path provided via CLI
     if (this.configPath) {
-      const resolved = path.isAbsolute(this.configPath) 
-        ? this.configPath 
+      const resolved = path.isAbsolute(this.configPath)
+        ? this.configPath
         : path.join(this.workspaceRoot, this.configPath);
+      console.log(`Looking for config at: ${resolved}`);
       if (fs.existsSync(resolved)) {
         return resolved;
       }
@@ -75,8 +76,11 @@ export class ConfigLoader {
       path.join(this.workspaceRoot, 'driftguard.config.json'),
     ];
 
+    console.log(`Workspace root: ${this.workspaceRoot}`);
     for (const candidate of candidates) {
+      console.log(`Checking config candidate: ${candidate}`);
       if (fs.existsSync(candidate)) {
+        console.log(`Found config at: ${candidate}`);
         return candidate;
       }
     }

@@ -1,4 +1,4 @@
-import { LanguageAnalyzer, ScanContext, GraphModel } from '@driftguard/core-engine';
+import { LanguageAnalyzer, ScanContext, GraphModel, type DependsOnEdge } from '@driftguard/core-engine';
 import * as path from 'path';
 import { ASTParser, ParsedFile } from './parser/ast-parser';
 import { ImportGraphAnalyzer } from './analyzer/import-graph';
@@ -92,6 +92,19 @@ export class TypeScriptAnalyzer implements LanguageAnalyzer {
         await graph.createImport(edge);
       } catch (error) {
         // Skip if target file doesn't exist in graph
+      }
+    }
+
+    // Create DEPENDS_ON edges based on file imports (simplified dependency)
+    for (const edge of importEdges) {
+      try {
+        await graph.createDependsOn({
+          from: edge.from,
+          to: edge.to,
+          strength: 1.0,
+        });
+      } catch (error) {
+        // Skip if target nodes don't exist
       }
     }
   }

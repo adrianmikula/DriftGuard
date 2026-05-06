@@ -109,23 +109,42 @@ interface LayerRule {
 
 ## VS Code Settings
 
-Use the `driftguard.` namespace for per-workspace overrides:
+The extension uses the `driftguard.` namespace for configuration. These settings override the `.driftguard/config.json` file for engine connection parameters only.
+
+### Available Settings
 
 ```json
 {
-  "driftguard.engineUrl": "http://custom-engine:3000",
-  "driftguard.configPath": "./custom-config.json"   // optional; future feature
+  "driftguard.engineUrl": "http://localhost:3000",
+  "driftguard.timeoutMs": 30000
 }
 ```
 
-## Precedence
+- **`driftguard.engineUrl`** (string, default: `http://localhost:3000`)  
+  URL of the DriftGuard engine server. The extension communicates with the engine via HTTP API. Ensure the server is running and accessible at this address.
 
-1. Environment variables
-2. VS Code settings (extension only)
-3. Config file (`.driftguard/config.json`)
-4. Built-in defaults (only for non-sensitive fields like `fileExtensions` fallback; config file is still required)
+- **`driftguard.timeoutMs`** (number, default: `30000`)  
+  Timeout in milliseconds for engine API requests. If a scan takes longer than this, the request will be aborted.
 
-If required credentials (`MEMGRAPH_USERNAME`, `MEMGRAPH_PASSWORD`) are missing, the CLI exits with an error.
+### Precedence
+
+For engine connectivity (HTTP client):
+1. VS Code settings (`driftguard.engineUrl`, `driftguard.timeoutMs`)
+2. Environment variables (`ENGINE_URL`, `ENGINE_TIMEOUT_MS`)
+3. Config file (`.driftguard/config.json` → `engine.url`, `engine.timeoutMs`)
+4. Built-in defaults (`http://localhost:3000`, `30000`)
+
+For all other configuration (rules, layers, file discovery), the extension does not override the config file; it only provides file paths to the engine, which reads its own configuration from the workspace `.driftguard/config.json`.
+
+### Status Bar
+
+The extension adds a status bar item indicating the engine connection status:
+- **Green checkmark** — Engine is reachable and healthy
+- **Red warning** — Engine is unreachable; click the status item to retry
+
+Click the status bar item or run the **"DriftGuard: Check Engine Status"** command to manually verify connectivity.
+
+---
 
 ## Migration from Hardcoded Defaults
 
@@ -142,3 +161,9 @@ cp path/to/repo/.env.example .env
 ## Validation
 
 The configuration is validated using Zod on startup. Errors include field paths and expected types. Invalid JSON, unknown keys, or missing required fields produce clear error messages.
+
+---
+
+## See Also
+
+- **Dual Transport Architecture** — explains why the engine can be used via HTTP or direct library calls, and why the VSCode extension uses HTTP: [`docs/adr/001-dual-transport-architecture.md`](./adr/001-dual-transport-architecture.md)

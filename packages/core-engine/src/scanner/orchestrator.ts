@@ -47,6 +47,9 @@ export class ScannerOrchestrator {
         throw new Error(`No analyzer found for language: ${context.language}`);
       }
 
+      // Reset graph metrics before scan
+      this.graph.resetMetrics();
+
       // Run language-specific analysis
       await analyzer.analyze(context, this.graph);
 
@@ -55,14 +58,15 @@ export class ScannerOrchestrator {
       const violations = allResults.filter(r => !r.passed);
 
       const duration = Date.now() - startTime;
+      const graphMetrics = this.graph.getMetrics();
 
       return {
         success: true,
         violations,
         metrics: {
           filesScanned: context.files.length,
-          nodesCreated: 0, // TODO: Track from graph operations
-          edgesCreated: 0, // TODO: Track from graph operations
+          nodesCreated: graphMetrics.nodesCreated,
+          edgesCreated: graphMetrics.edgesCreated,
           duration,
         },
       };

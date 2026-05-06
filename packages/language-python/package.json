@@ -11,7 +11,7 @@
     "lint": "echo \"Lint not implemented yet\""
   },
   "dependencies": {
-    "@driftguard/core-engine": "file:../core-engine"
+    "@driftguard/core-engine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.10.6",

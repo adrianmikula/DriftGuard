@@ -12,8 +12,27 @@
       {
         "command": "driftguard.scanFile",
         "title": "DriftGuard: Scan Current File"
+      },
+      {
+        "command": "driftguard.checkStatus",
+        "title": "DriftGuard: Check Engine Status"
       }
     ],
+    "configuration": {
+      "title": "DriftGuard",
+      "properties": {
+        "driftguard.engineUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "URL of the DriftGuard engine server (HTTP API). The extension communicates with the engine via this endpoint."
+        },
+        "driftguard.timeoutMs": {
+          "type": "number",
+          "default": 30000,
+          "description": "Timeout in milliseconds for engine API requests."
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -38,7 +57,7 @@
     "lint": "echo \"Lint not implemented yet\""
   },
   "dependencies": {
-    "@driftguard/core-engine": "file:../core-engine"
+    "@driftguard/core-engine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.10.6",
