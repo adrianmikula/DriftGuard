@@ -39,6 +39,9 @@ vi.mock('vscode', () => ({
   workspace: {
     workspaceFolders: null,
     findFiles: vi.fn(async () => []),
+    getConfiguration: vi.fn(() => ({
+      get: vi.fn(),
+    })),
   },
 }));
 
@@ -121,6 +124,12 @@ describe('Commands', () => {
       (vscode.workspace as any).workspaceFolders = [{ uri: { fsPath: '/test' } }];
       (vscode.workspace as any).findFiles = vi.fn(async () => [{ fsPath: '/test/file.ts' }]);
 
+      const mockScan = vi.spyOn(engineClient, 'scan').mockResolvedValue({
+        success: true,
+        violations: [],
+        metrics: { filesScanned: 1, nodesCreated: 0, edgesCreated: 0, duration: 0 },
+      });
+
       registerCommands(context, engineClient, treeProvider);
       const commandFn = (vscode.commands.registerCommand as any).mock.calls[0][1];
 
@@ -133,6 +142,12 @@ describe('Commands', () => {
       const refreshSpy = vi.spyOn(treeProvider, 'refresh');
       (vscode.workspace as any).workspaceFolders = [{ uri: { fsPath: '/test' } }];
       (vscode.workspace as any).findFiles = vi.fn(async () => [{ fsPath: '/test/file.ts' }]);
+
+      const mockScan = vi.spyOn(engineClient, 'scan').mockResolvedValue({
+        success: true,
+        violations: [],
+        metrics: { filesScanned: 1, nodesCreated: 0, edgesCreated: 0, duration: 0 },
+      });
 
       registerCommands(context, engineClient, treeProvider);
       const commandFn = (vscode.commands.registerCommand as any).mock.calls[0][1];

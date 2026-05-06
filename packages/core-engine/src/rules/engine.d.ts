@@ -22,6 +22,11 @@ export interface Rule {
 }
 export declare class RuleEngine {
     private rules;
+    private ruleConfigs;
+    constructor(ruleConfigs?: Record<string, {
+        enabled?: boolean;
+        severity?: 'error' | 'warning' | 'info';
+    }>);
     registerRule(rule: Rule): void;
     unregisterRule(ruleId: string): void;
     getRule(ruleId: string): Rule | undefined;

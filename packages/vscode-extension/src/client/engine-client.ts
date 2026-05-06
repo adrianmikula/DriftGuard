@@ -133,7 +133,7 @@ export class EngineClient {
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
-      return response.json();
+      return response.json() as Promise<T>;
     } catch (error: any) {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
@@ -164,7 +164,7 @@ export class EngineClient {
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
-      return response.json();
+      return response.json() as Promise<T>;
     } catch (error: any) {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {

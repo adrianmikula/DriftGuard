@@ -39,6 +39,9 @@ vi.mock('vscode', () => ({
   workspace: {
     workspaceFolders: null,
     findFiles: vi.fn(async () => []),
+    getConfiguration: vi.fn(() => ({
+      get: vi.fn(),
+    })),
   },
 }));
 

@@ -10,6 +10,11 @@ describe('ConfigLoader', () => {
 
   beforeEach(() => {
     originalEnv = { ...process.env };
+    // Clear driftguard-specific env vars to ensure clean state
+    delete process.env.MEMGRAPH_USERNAME;
+    delete process.env.MEMGRAPH_PASSWORD;
+    delete process.env.MEMGRAPH_URI;
+    delete process.env.ENGINE_URL;
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'driftguard-test-'));
   });
 

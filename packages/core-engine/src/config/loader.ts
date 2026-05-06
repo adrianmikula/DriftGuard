@@ -27,7 +27,12 @@ export class ConfigLoader {
     }
 
     const configContent = fs.readFileSync(configFilePath, 'utf-8');
-    const parsedConfig = JSON.parse(configContent);
+    let parsedConfig: any;
+    try {
+      parsedConfig = JSON.parse(configContent);
+    } catch (error) {
+      throw new Error(`Invalid configuration: Unable to parse JSON (${(error as Error).message})`);
+    }
 
     // 3. Validate against schema
     const result = ConfigSchema.safeParse(parsedConfig);
@@ -52,7 +57,7 @@ export class ConfigLoader {
   private loadEnvFile(): void {
     const envPath = path.join(this.workspaceRoot, '.env');
     if (fs.existsSync(envPath)) {
-      dotenv.config({ path: envPath });
+      dotenv.config({ path: envPath, override: true });
     }
     // Also try loading from process.env directly (for CI scenarios)
   }

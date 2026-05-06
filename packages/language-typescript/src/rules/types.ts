@@ -1,2 +1,2 @@
-// Re-export types from core-engine to maintain compatibility
-export * from '@driftguard/core-engine';
+// Re-export only necessary rule types from core-engine
+export type { Rule, RuleResult, RuleViolation } from '@driftguard/core-engine';

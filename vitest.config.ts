@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import path from 'path';
 
 export default defineConfig({
   test: {
@@ -15,6 +16,13 @@ export default defineConfig({
         '**/*.test.ts',
         '**/*.config.ts',
       ],
+    },
+  },
+  resolve: {
+    alias: {
+      '@driftguard/core-engine': path.resolve(__dirname, 'packages/core-engine/src'),
+      '@driftguard/language-typescript': path.resolve(__dirname, 'packages/language-typescript/src'),
+      '@driftguard/language-python': path.resolve(__dirname, 'packages/language-python/src'),
     },
   },
 });

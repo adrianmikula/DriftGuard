@@ -57,11 +57,11 @@
     "lint": "echo \"Lint not implemented yet\""
   },
   "dependencies": {
-    "@driftguard/core-engine": "workspace:*"
+    "@driftguard/core-engine": "file:../core-engine/driftguard-core-engine-0.1.0.tgz"
   },
   "devDependencies": {
-    "@types/node": "^20.10.6",
-    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.19.39",
+    "@types/vscode": "^1.118.0",
     "typescript": "^5.3.3",
     "vitest": "^2.0.0"
   },

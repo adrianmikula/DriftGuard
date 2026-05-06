@@ -25,7 +25,10 @@ describe('ScannerOrchestrator', () => {
 
   beforeEach(() => {
     mockRuleEngine = new RuleEngine();
-    mockGraph = {};
+    mockGraph = {
+      resetMetrics: vi.fn(),
+      getMetrics: vi.fn(() => ({ nodesCreated: 0, edgesCreated: 0 })),
+    };
     orchestrator = new ScannerOrchestrator(mockGraph, mockRuleEngine);
   });
 
