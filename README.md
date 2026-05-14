@@ -130,6 +130,22 @@ cd packages/core-engine
 npm test
 ```
 
+#### Fast Test Loop
+
+For rapid development feedback, AI agents can use the **fast test loop** which runs a subset of unit tests that complete in under 10 seconds:
+
+```bash
+# Run fast tests only (unit tests without external dependencies)
+npm run test:fast
+```
+
+The fast test loop includes:
+- Core engine unit tests (rules, config) with mocked dependencies
+- Language package unit tests (TypeScript rules, analyzer stubs)
+- Excludes integration tests, graph client tests, scanner tests, and VS Code extension tests
+
+This provides quick validation during development without waiting for slower integration tests.
+
 ### Test Infrastructure
 
 - **Core Engine**: Includes tests for GraphClient (with mocked neo4j-driver), RuleEngine, ScannerOrchestrator, and utility functions
