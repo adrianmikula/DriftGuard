@@ -1,33 +1,29 @@
-// Temporarily commented out vscode imports due to compilation issues
-// import * as vscode from 'vscode';
+import * as vscode from 'vscode';
 import { EngineClient } from '../client/engine-client';
 
 export interface ArchitectureNode {
   label: string;
-  collapsibleState: number; // vscode.TreeItemCollapsibleState
+  collapsibleState: vscode.TreeItemCollapsibleState;
   children?: ArchitectureNode[];
-  iconPath?: any; // vscode.ThemeIcon
+  iconPath?: vscode.ThemeIcon;
   contextValue?: string;
 }
 
-export class ArchitectureTreeProvider {
-  // TODO: Re-enable when vscode types are properly configured
-  // private _onDidChangeTreeData = new vscode.EventEmitter<ArchitectureNode | undefined>();
-  // readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+export class ArchitectureTreeProvider implements vscode.TreeDataProvider<ArchitectureNode> {
+  private _onDidChangeTreeData = new vscode.EventEmitter<ArchitectureNode | undefined | null>();
+  readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   constructor(private engineClient: EngineClient) {}
 
   refresh(): void {
-    // this._onDidChangeTreeData.fire(undefined);
+    this._onDidChangeTreeData.fire(undefined);
   }
 
-  getTreeItem(element: ArchitectureNode): any {
-    // TODO: Re-enable when vscode types are properly configured
-    // const treeItem = new vscode.TreeItem(element.label, element.collapsibleState);
-    // treeItem.contextValue = element.contextValue;
-    // treeItem.iconPath = element.iconPath;
-    // return treeItem;
-    return element;
+  getTreeItem(element: ArchitectureNode): vscode.TreeItem {
+    const treeItem = new vscode.TreeItem(element.label, element.collapsibleState);
+    treeItem.contextValue = element.contextValue;
+    treeItem.iconPath = element.iconPath;
+    return treeItem;
   }
 
   async getChildren(element?: ArchitectureNode): Promise<ArchitectureNode[]> {
@@ -36,27 +32,57 @@ export class ArchitectureTreeProvider {
       return [
         {
           label: 'Violations',
-          collapsibleState: 1, // vscode.TreeItemCollapsibleState.Collapsed
-          iconPath: { id: 'warning' }, // new vscode.ThemeIcon('warning')
+          collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
+          iconPath: new vscode.ThemeIcon('warning'),
           contextValue: 'violations',
         },
         {
           label: 'Import Graph',
-          collapsibleState: 1, // vscode.TreeItemCollapsibleState.Collapsed
-          iconPath: { id: 'graph' }, // new vscode.ThemeIcon('graph')
+          collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
+          iconPath: new vscode.ThemeIcon('graph'),
           contextValue: 'import-graph',
         },
       ];
     }
 
     if (element.contextValue === 'violations') {
-      // TODO: Fetch actual violations from engine
-      return [];
+      // Fetch actual violations from engine
+      try {
+        const violations = await this.engineClient.getViolations();
+        return violations.map(v => ({
+          label: `${v.ruleId}: ${v.message}`,
+          collapsibleState: vscode.TreeItemCollapsibleState.None,
+          iconPath: new vscode.ThemeIcon('error'),
+          contextValue: 'violation',
+        }));
+      } catch (error) {
+        return [{
+          label: `Error loading violations: ${error}`,
+          collapsibleState: vscode.TreeItemCollapsibleState.None,
+          iconPath: new vscode.ThemeIcon('error'),
+          contextValue: 'error',
+        }];
+      }
     }
 
     if (element.contextValue === 'import-graph') {
-      // TODO: Fetch actual import graph from engine
-      return [];
+      // Fetch actual import graph from engine
+      try {
+        const graph = await this.engineClient.getImportGraph();
+        return graph.imports.map((imp: any) => ({
+          label: `${imp.from} → ${imp.to}`,
+          collapsibleState: vscode.TreeItemCollapsibleState.None,
+          iconPath: new vscode.ThemeIcon('references'),
+          contextValue: 'import',
+        }));
+      } catch (error) {
+        return [{
+          label: `Error loading import graph: ${error}`,
+          collapsibleState: vscode.TreeItemCollapsibleState.None,
+          iconPath: new vscode.ThemeIcon('error'),
+          contextValue: 'error',
+        }];
+      }
     }
 
     return [];

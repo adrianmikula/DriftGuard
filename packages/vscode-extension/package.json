@@ -16,6 +16,10 @@
       {
         "command": "driftguard.checkStatus",
         "title": "DriftGuard: Check Engine Status"
+      },
+      {
+        "command": "driftguard.openConfig",
+        "title": "DriftGuard: Open Configuration"
       }
     ],
     "configuration": {
@@ -37,7 +41,8 @@
       "activitybar": [
         {
           "id": "driftguard",
-          "title": "DriftGuard"
+          "title": "DriftGuard",
+          "icon": "activity-bar-icon.svg"
         }
       ]
     },
@@ -45,13 +50,14 @@
       "driftguard": [
         {
           "id": "driftguardArchitectureView",
-          "name": "Architecture"
+          "name": "Architecture",
+          "icon": "view-icon.svg"
         }
       ]
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && copy *.svg dist\\",
     "watch": "tsc --watch",
     "test": "vitest",
     "lint": "echo \"Lint not implemented yet\""
