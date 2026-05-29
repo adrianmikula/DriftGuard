@@ -30,3 +30,6 @@ Thumbs.db
 
 # AI
 .kilo/
+
+#Ignore windsurf AI rules
+.windsurfrules

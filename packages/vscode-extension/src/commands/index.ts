@@ -11,6 +11,17 @@ interface WorkspaceConfig {
   };
 }
 
+const EXT_TO_LANGUAGE: Record<string, string> = {
+  ts: 'typescript', tsx: 'typescript',
+  js: 'javascript', jsx: 'javascript',
+  py: 'python',
+};
+
+function detectLanguage(filePath: string): string {
+  const ext = path.extname(filePath).slice(1).toLowerCase();
+  return EXT_TO_LANGUAGE[ext] ?? 'typescript';
+}
+
 function loadWorkspaceConfig(workspacePath: string): WorkspaceConfig {
   try {
     const configPath = path.join(workspacePath, '.driftguard', 'config.json');
@@ -60,7 +71,7 @@ export function registerCommands(
 
             const result = await engineClient.scan({
               workspacePath,
-              language: 'typescript',
+              language: detectLanguage(filePaths[0] ?? ''),
               files: filePaths,
             });
 
@@ -106,7 +117,7 @@ export function registerCommands(
           try {
             const result = await engineClient.scan({
               workspacePath: workspaceFolders[0].uri.fsPath,
-              language: 'typescript',
+              language: detectLanguage(filePath),
               files: [filePath],
             });
 
@@ -125,6 +136,25 @@ export function registerCommands(
     }
   );
 
+  const defaultConfig = {
+    layers: [
+      { name: 'ui', pattern: 'src/ui/**', canImport: ['domain'], cannotImport: ['infrastructure'] },
+      { name: 'domain', pattern: 'src/domain/**', canImport: [], cannotImport: ['ui', 'infrastructure'] },
+      { name: 'infrastructure', pattern: 'src/infrastructure/**', canImport: ['domain'], cannotImport: ['ui'] },
+    ],
+    analyzer: { fileExtensions: ['ts', 'tsx'] },
+    fileDiscovery: {
+      includePatterns: ['**/*.{ts,tsx}'],
+      excludePatterns: ['**/node_modules/**', '**/dist/**'],
+    },
+    rules: {
+      'boundary-violation': { enabled: true, severity: 'error' },
+      'circular-dependency': { enabled: true, severity: 'warning' },
+    },
+    database: { uri: 'bolt://localhost:7687' },
+    engine: { url: 'http://localhost:3000' },
+  };
+
   const openConfigCommand = vscode.commands.registerCommand(
     'driftguard.openConfig',
     async () => {
@@ -135,9 +165,24 @@ export function registerCommands(
       }
 
       const workspacePath = workspaceFolders[0].uri.fsPath;
-      const configPath = path.join(workspacePath, '.driftguard', 'config.json');
+      const configDir = path.join(workspacePath, '.driftguard');
+      const configPath = path.join(configDir, 'config.json');
 
       try {
+        if (!fs.existsSync(configPath)) {
+          const answer = await vscode.window.showInformationMessage(
+            'No DriftGuard config found. Create a default config.json?',
+            'Create',
+            'Cancel'
+          );
+          if (answer !== 'Create') {
+            return;
+          }
+          if (!fs.existsSync(configDir)) {
+            fs.mkdirSync(configDir, { recursive: true });
+          }
+          fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2), 'utf-8');
+        }
         const document = await vscode.workspace.openTextDocument(configPath);
         await vscode.window.showTextDocument(document);
       } catch (error) {

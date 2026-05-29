@@ -9,6 +9,7 @@ export interface ScanContext {
 
 export interface ScanResult {
   success: boolean;
+  error?: string;
   violations: RuleResult[];
   metrics: {
     filesScanned: number;
@@ -25,6 +26,7 @@ export interface LanguageAnalyzer {
 
 export class ScannerOrchestrator {
   private analyzers: Map<string, LanguageAnalyzer> = new Map();
+  private lastViolations: RuleResult[] = [];
 
   constructor(
     private graph: GraphModel,
@@ -56,6 +58,7 @@ export class ScannerOrchestrator {
       // Execute all rules and filter to only violations (failed rules)
       const allResults = await this.ruleEngine.executeAllRules(context);
       const violations = allResults.filter(r => !r.passed);
+      this.lastViolations = violations;
 
       const duration = Date.now() - startTime;
       const graphMetrics = this.graph.getMetrics();
@@ -71,8 +74,10 @@ export class ScannerOrchestrator {
         },
       };
     } catch (error) {
+      console.error('Scan error:', error);
       return {
         success: false,
+        error: error instanceof Error ? error.message : String(error),
         violations: [],
         metrics: {
           filesScanned: 0,
@@ -82,5 +87,9 @@ export class ScannerOrchestrator {
         },
       };
     }
+  }
+
+  getLastViolations(): RuleResult[] {
+    return this.lastViolations;
   }
 }

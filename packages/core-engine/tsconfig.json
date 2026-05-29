@@ -5,7 +5,7 @@
     "rootDir": "./src",
     "baseUrl": ".",
     "paths": {
-      "@driftguard/language-typescript": ["../language-typescript/src"]
+      "@driftguard/language-typescript": ["node_modules/@driftguard/language-typescript/dist"]
     }
   },
   "include": ["src/**/*"],

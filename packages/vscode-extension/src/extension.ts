@@ -6,11 +6,18 @@ import { ArchitectureTreeProvider } from './ui/architecture-tree';
 let engineClient: EngineClient;
 let statusBarItem: vscode.StatusBarItem;
 
+function createEngineClient(): EngineClient {
+  const config = vscode.workspace.getConfiguration('driftguard');
+  const engineUrl = config.get<string>('engineUrl', 'http://localhost:3000');
+  const timeoutMs = config.get<number>('timeoutMs', 30000);
+  return new EngineClient(engineUrl, timeoutMs);
+}
+
 export function activate(context: vscode.ExtensionContext) {
   console.log('DriftGuard extension is now active');
 
-  // Initialize engine client
-  engineClient = new EngineClient();
+  // Initialize engine client from VS Code settings
+  engineClient = createEngineClient();
 
   // Create status bar item to show engine connection status
   statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
@@ -40,6 +47,16 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(checkStatusCommand);
 
   context.subscriptions.push(treeView);
+
+  // Re-create the engine client when settings change
+  const configWatcher = vscode.workspace.onDidChangeConfiguration(e => {
+    if (e.affectsConfiguration('driftguard')) {
+      engineClient = createEngineClient();
+      treeProvider.updateClient(engineClient);
+      checkEngineHealth().catch(console.error);
+    }
+  });
+  context.subscriptions.push(configWatcher);
 }
 
 async function checkEngineHealth() {
@@ -61,6 +78,3 @@ async function checkEngineHealth() {
   }
 }
 
-export function deactivate() {
-  // console.log('DriftGuard extension is now deactivated');
-}

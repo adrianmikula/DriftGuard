@@ -1,7 +1,17 @@
 {
-  "name": "@driftguard/vscode-extension",
+  "name": "driftguard",
+  "displayName": "DriftGuard",
+  "publisher": "CodeMedic",
   "version": "0.1.0",
-  "description": "VS Code extension for DriftGuard",
+  "description": "Detect architectural drift in your TypeScript codebase — catch layer violations and circular dependencies before they compound.",
+  "categories": ["Linters", "Other"],
+  "keywords": ["architecture", "drift", "typescript", "dependency", "circular", "layers", "analysis"],
+  "icon": "icon.png",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adrianmikula/DriftGuard.git"
+  },
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
@@ -57,7 +67,7 @@
     }
   },
   "scripts": {
-    "build": "tsc && copy *.svg dist\\",
+    "build": "tsc && copyfiles *.svg dist/",
     "watch": "tsc --watch",
     "test": "vitest",
     "lint": "echo \"Lint not implemented yet\""
@@ -68,6 +78,7 @@
   "devDependencies": {
     "@types/node": "^20.19.39",
     "@types/vscode": "^1.118.0",
+    "copyfiles": "^2.4.1",
     "typescript": "^5.3.3",
     "vitest": "^2.0.0"
   },

@@ -1,4 +1,5 @@
 import { LanguageAnalyzer, ScanContext, GraphModel, type DependsOnEdge } from '@driftguard/core-engine';
+import * as fs from 'fs';
 import * as path from 'path';
 import { ASTParser, ParsedFile } from './parser/ast-parser';
 import { ImportGraphAnalyzer } from './analyzer/import-graph';
@@ -50,11 +51,13 @@ export class TypeScriptAnalyzer implements LanguageAnalyzer {
         parsedFiles.push(parsed);
 
         // Create file node in graph
+        let lastModified = Date.now();
+        try { lastModified = fs.statSync(filePath).mtimeMs; } catch { /* fallback to now */ }
         await graph.createFile({
           id: filePath,
           path: filePath,
           language: 'typescript',
-          lastModified: Date.now(), // TODO: Use actual file stats when fs is available
+          lastModified,
         });
 
         // Create class nodes

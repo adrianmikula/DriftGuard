@@ -15,6 +15,11 @@ export class ArchitectureTreeProvider implements vscode.TreeDataProvider<Archite
 
   constructor(private engineClient: EngineClient) {}
 
+  updateClient(client: EngineClient): void {
+    this.engineClient = client;
+    this.refresh();
+  }
+
   refresh(): void {
     this._onDidChangeTreeData.fire(undefined);
   }

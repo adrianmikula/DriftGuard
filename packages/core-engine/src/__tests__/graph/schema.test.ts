@@ -4,8 +4,8 @@ import { NodeType, EdgeType } from '../../graph/schema';
 describe('GraphSchema (Smoke Test)', () => {
   it('should define node types', () => {
     expect(NodeType).toBeDefined();
-    expect(NodeType.File).toBe('File');
-    expect(NodeType.Class).toBe('Class');
+    expect(NodeType.FILE).toBe('File');
+    expect(NodeType.CLASS).toBe('Class');
   });
 
   it('should define edge types', () => {

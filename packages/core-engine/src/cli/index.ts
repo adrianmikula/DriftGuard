@@ -6,7 +6,8 @@ import { GraphModel } from '../graph/model';
 import { RuleEngine } from '../rules';
 import { ScannerOrchestrator } from '../scanner';
 import { ConfigLoader } from '../config';
-import { TypeScriptAnalyzer } from '../stubs/language-typescript';
+import { TypeScriptAnalyzer } from '@driftguard/language-typescript';
+import { type LanguageAnalyzer } from '../scanner';
 import type { Config } from '../config/schema';
 import { startServer, createServer } from '../server';
 import { MockGraphModel } from '../stubs/mock-graph';
@@ -79,7 +80,7 @@ async function runScan(
     layers: config.layers,
     fileExtensions: config.analyzer.fileExtensions,
   });
-  orchestrator.registerAnalyzer(analyzer);
+  orchestrator.registerAnalyzer(analyzer as unknown as LanguageAnalyzer);
 
   // Register rules based on analyzer and config
   if (config.rules['boundary-violation']?.enabled !== false) {
@@ -182,7 +183,7 @@ function runServer(
       layers: config.layers,
       fileExtensions: config.analyzer.fileExtensions,
     });
-    orchestrator.registerAnalyzer(analyzer);
+    orchestrator.registerAnalyzer(analyzer as unknown as LanguageAnalyzer);
 
     // Register rules
     if (config.rules['boundary-violation']?.enabled !== false) {

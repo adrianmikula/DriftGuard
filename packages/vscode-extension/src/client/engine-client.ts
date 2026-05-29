@@ -1,10 +1,3 @@
-// Temporarily commented out vscode imports due to compilation issues
-// import * as vscode from 'vscode';
-// import * as fs from 'fs';
-// import * as path from 'path';
-// Temporarily commented out core-engine imports due to monorepo setup issues
-// import { ScanResult, RuleViolation } from '@driftguard/core-engine';
-
 export interface ScanRequest {
   workspacePath: string;
   language: string;
@@ -139,6 +132,6 @@ export class EngineClient {
   }
 
   async getMetrics(): Promise<{ nodesCreated: number; edgesCreated: number }> {
-    return this.httpGet<{ nodesCreated: number; edgesCreated: number }>('/api/metrics');
+    return this.httpGet<{ nodesCreated: number; edgesCreated: number }>('/api/metrics/json');
   }
 }

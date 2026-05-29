@@ -1,0 +1,14 @@
+.vscode/**
+node_modules/**
+src/**
+**/__tests__/**
+**/__mocks__/**
+*.test.ts
+*.test.js
+tsconfig.json
+tsconfig.tsbuildinfo
+vitest.config.ts
+vitest.config.js
+vitest.config.d.ts
+.gitignore
+.npmrc

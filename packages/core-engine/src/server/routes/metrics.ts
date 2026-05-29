@@ -4,9 +4,28 @@ import { GraphModel } from '../../graph/model';
 export default function metricsRouter(graph: GraphModel): Router {
   const router = Router();
 
+  router.get('/json', (req: Request, res: Response) => {
+    const metrics = graph.getMetrics();
+    res.json({
+      nodesCreated: metrics.nodesCreated,
+      edgesCreated: metrics.edgesCreated,
+      uptimeSeconds: process.uptime(),
+    });
+  });
+
   router.get('/', (req: Request, res: Response) => {
+    const accept = req.headers['accept'] ?? '';
     const metrics = graph.getMetrics();
     const timestamp = Date.now();
+
+    if (accept.includes('application/json')) {
+      res.json({
+        nodesCreated: metrics.nodesCreated,
+        edgesCreated: metrics.edgesCreated,
+        uptimeSeconds: process.uptime(),
+      });
+      return;
+    }
 
     // Prometheus-style text format
     const output = `# HELP driftguard_nodes_created_total Total number of graph nodes created

@@ -5,6 +5,7 @@ import scanRouter from './routes/scan';
 import statusRouter from './routes/status';
 import metricsRouter from './routes/metrics';
 import graphRouter from './routes/graph';
+import violationsRouter from './routes/violations';
 
 export interface ServerConfig {
   port: number;
@@ -31,6 +32,7 @@ export function createServer(
   app.use('/api/scan', scanRouter(orchestrator, graph));
   app.use('/api/status', statusRouter());
   app.use('/api/metrics', metricsRouter(graph));
+  app.use('/api/violations', violationsRouter(orchestrator));
   app.use('/api/graph', graphRouter(graph));
 
   // Simple root endpoint for testing
