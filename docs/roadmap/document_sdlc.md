@@ -54,12 +54,31 @@ cd ../vscode-extension && npm run build
 - Full test suite: `npm test`
 - With coverage: `npm test -- --coverage`
 
-### 7. Publishing the VS Code Extension
+### 7. Publishing the VS Code Extension (Paid)
+
+Paid extensions are configured in the **Microsoft Partner Center**, not via `package.json` pricing fields.
+
+#### 7.1 Microsoft Partner Center Setup (One-Time)
+1. Register at [partner.microsoft.com](https://partner.microsoft.com)
+2. Create or claim publisher **`CodeMedic`**
+3. Complete identity verification (individual or business)
+4. Fill out tax forms (W-8BEN, W-8BEN-E, or W-9)
+5. Add payout method (bank account / PayPal)
+6. Accept the Marketplace Publisher Agreement
+
+#### 7.2 Extension Manifest Notes
+- Valid `pricing` values are `"Free"` or `"Trial"`
+- DriftGuard uses `"pricing": "Trial"` to indicate a free trial period
+- The 7-day trial logic is implemented in `src/trial.ts` (trial start stored in globalState)
+- After trial expiry, scan commands are blocked until a `licenseKey` is entered in settings
+- Actual pricing tier is configured in the Partner Center dashboard
+
+#### 7.3 Build & Publish
 1. Install vsce: `npm install -g @vscode/vsce`
-2. Create publisher account on Azure DevOps
-3. Create Personal Access Token
-4. Login: `vsce login <publisher>`
-5. Package: `vsce package`
+2. Create Personal Access Token in Azure DevOps
+3. Login: `vsce login CodeMedic`
+4. Package: `vsce package`
+5. Set price tier in Partner Center dashboard before publishing
 6. Publish: `vsce publish`
 
 ## Files to Modify

@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { EngineClient } from '../client/engine-client';
 import { ArchitectureTreeProvider } from '../ui/architecture-tree';
+import { assertTrialOrLicense } from '../trial';
 
 interface WorkspaceConfig {
   fileDiscovery?: {
@@ -43,6 +44,9 @@ export function registerCommands(
   const scanWorkspaceCommand = vscode.commands.registerCommand(
     'driftguard.scanWorkspace',
     async () => {
+      if (!assertTrialOrLicense(context)) {
+        return;
+      }
       const workspaceFolders = vscode.workspace.workspaceFolders;
       if (!workspaceFolders) {
         vscode.window.showErrorMessage('No workspace folder found');
@@ -94,6 +98,9 @@ export function registerCommands(
   const scanFileCommand = vscode.commands.registerCommand(
     'driftguard.scanFile',
     async () => {
+      if (!assertTrialOrLicense(context)) {
+        return;
+      }
       const activeEditor = vscode.window.activeTextEditor;
       if (!activeEditor) {
         vscode.window.showErrorMessage('No active file');

@@ -36,6 +36,7 @@ node dist/cli/index.js <workspace-path> --server --port 3000
 | `DriftGuard: Scan Workspace` | Scan all TypeScript files for violations |
 | `DriftGuard: Scan Current File` | Scan the active file |
 | `DriftGuard: Check Engine Status` | Ping the engine and update the status bar |
+| `DriftGuard: Check Trial Status` | Check trial days remaining or license status |
 | `DriftGuard: Open Configuration` | Open (or create) `.driftguard/config.json` |
 
 ## Configuration
@@ -44,6 +45,7 @@ node dist/cli/index.js <workspace-path> --server --port 3000
 |---|---|---|
 | `driftguard.engineUrl` | `http://localhost:3000` | URL of the DriftGuard engine server |
 | `driftguard.timeoutMs` | `30000` | Request timeout in milliseconds |
+| `driftguard.licenseKey` | `""` | License key to unlock after trial (purchase via Marketplace) |
 
 ## Example `.driftguard/config.json`
 
@@ -60,6 +62,20 @@ node dist/cli/index.js <workspace-path> --server --port 3000
   }
 }
 ```
+
+## Pricing
+
+DriftGuard includes a **7-day free trial** with full access to all features. After the trial period, a valid license key is required to continue using scan commands.
+
+- **Trial** — Install and use all features for 7 days at no cost.
+- **License** — Purchase via the VS Code Marketplace. Enter your license key in `driftguard.licenseKey` settings.
+- **Bulk/team pricing** — Contact **support@codemedic.dev**.
+
+## Support
+
+- **Issues & bugs:** [GitHub Issues](https://github.com/adrianmikula/DriftGuard/issues)
+- **Documentation:** [Configuration Guide](https://github.com/adrianmikula/DriftGuard/blob/main/docs/configuration.md)
+- **Email:** support@codemedic.dev
 
 ## License
 

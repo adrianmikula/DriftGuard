@@ -8,6 +8,8 @@
   "keywords": ["architecture", "drift", "typescript", "dependency", "circular", "layers", "analysis"],
   "icon": "icon.png",
   "license": "MIT",
+  "pricing": "Trial",
+  "homepage": "https://github.com/adrianmikula/DriftGuard#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/adrianmikula/DriftGuard.git"
@@ -30,6 +32,10 @@
       {
         "command": "driftguard.openConfig",
         "title": "DriftGuard: Open Configuration"
+      },
+      {
+        "command": "driftguard.checkTrialStatus",
+        "title": "DriftGuard: Check Trial Status"
       }
     ],
     "configuration": {
@@ -44,6 +50,11 @@
           "type": "number",
           "default": 30000,
           "description": "Timeout in milliseconds for engine API requests."
+        },
+        "driftguard.licenseKey": {
+          "type": "string",
+          "default": "",
+          "description": "License key to unlock DriftGuard after the trial period. Purchase at the VS Code Marketplace."
         }
       }
     },

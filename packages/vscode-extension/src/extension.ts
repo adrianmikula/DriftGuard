@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import { EngineClient } from './client/engine-client';
 import { registerCommands } from './commands';
 import { ArchitectureTreeProvider } from './ui/architecture-tree';
+import { checkTrialAndNotify, isTrialActive } from './trial';
 
 let engineClient: EngineClient;
 let statusBarItem: vscode.StatusBarItem;
@@ -20,6 +21,9 @@ function createEngineClient(): EngineClient {
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('DriftGuard extension is now active');
+
+  // Check trial status and notify user
+  checkTrialAndNotify(context);
 
   // Initialize engine client from VS Code settings
   engineClient = createEngineClient();
@@ -52,6 +56,31 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
   context.subscriptions.push(checkStatusCommand);
+
+  // Register trial status check command
+  const checkTrialCommand = vscode.commands.registerCommand(
+    'driftguard.checkTrialStatus',
+    async () => {
+      const active = isTrialActive(context);
+      const config = vscode.workspace.getConfiguration('driftguard');
+      const hasLicense = config.get<string>('licenseKey', '').trim().length > 0;
+      if (hasLicense) {
+        vscode.window.showInformationMessage('DriftGuard is fully licensed. Thank you for your support!');
+      } else if (active) {
+        vscode.window.showInformationMessage('DriftGuard trial is active. Enjoy the full feature set.');
+      } else {
+        vscode.window.showWarningMessage(
+          'DriftGuard trial has expired. Please purchase a license to continue using the extension.',
+          'Purchase'
+        ).then(selection => {
+          if (selection === 'Purchase') {
+            vscode.env.openExternal(vscode.Uri.parse('https://marketplace.visualstudio.com/items?itemName=CodeMedic.driftguard'));
+          }
+        });
+      }
+    }
+  );
+  context.subscriptions.push(checkTrialCommand);
 
   context.subscriptions.push(treeView);
 
