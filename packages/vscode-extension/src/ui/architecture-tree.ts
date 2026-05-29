@@ -61,8 +61,16 @@ export class ArchitectureTreeProvider implements vscode.TreeDataProvider<Archite
           contextValue: 'violation',
         }));
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isConnectionError = errorMessage.includes('Connection failed') || errorMessage.includes('ECONNREFUSED') || errorMessage.includes('fetch failed');
+
+        if (isConnectionError) {
+          console.warn(`[DriftGuard] Engine not running: ${errorMessage}`);
+          return [];
+        }
+
         return [{
-          label: `Error loading violations: ${error}`,
+          label: `Error: ${errorMessage}`,
           collapsibleState: vscode.TreeItemCollapsibleState.None,
           iconPath: new vscode.ThemeIcon('error'),
           contextValue: 'error',
@@ -81,8 +89,16 @@ export class ArchitectureTreeProvider implements vscode.TreeDataProvider<Archite
           contextValue: 'import',
         }));
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isConnectionError = errorMessage.includes('Connection failed') || errorMessage.includes('ECONNREFUSED') || errorMessage.includes('fetch failed');
+
+        if (isConnectionError) {
+          console.warn(`[DriftGuard] Engine not running: ${errorMessage}`);
+          return [];
+        }
+
         return [{
-          label: `Error loading import graph: ${error}`,
+          label: `Error: ${errorMessage}`,
           collapsibleState: vscode.TreeItemCollapsibleState.None,
           iconPath: new vscode.ThemeIcon('error'),
           contextValue: 'error',

@@ -10,11 +10,12 @@
     "lint": "eslint . --ext .ts,.tsx"
   },
   "devDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.60.4",
     "@types/node": "^20.10.6",
     "@types/vscode": "^1.85.0",
-    "@vitest/ui": "^2.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
+    "@vitest/ui": "^2.0.0",
     "eslint": "^9.0.0",
     "eslint-plugin-unused-imports": "^4.0.0",
     "ts-morph": "^21.0.1",

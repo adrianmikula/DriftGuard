@@ -2,6 +2,23 @@
 
 Architectural drift detection engine with VS Code integration.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Development Setup](#development-setup)
+- [Configuration](#configuration)
+- [Building the Project](#building-the-project)
+- [Running / Debugging the Core Engine](#running--debugging-the-core-engine)
+- [Running / Debugging the VS Code Extension](#running--debugging-the-vs-code-extension)
+- [Testing](#testing)
+- [Publishing the VS Code Extension](#publishing-the-vs-code-extension)
+- [Packages](#packages)
+- [Troubleshooting](#troubleshooting)
+
+---
+
 ## Overview
 
 DriftGuard is a modular system for detecting architectural drift in codebases, with initial support for TypeScript and planned support for Python. It uses a graph database as the core source of truth for code architecture relationships.
@@ -12,7 +29,7 @@ DriftGuard is a modular system for detecting architectural drift in codebases, w
 - **Language Modules**: Pluggable analyzers for different languages (TypeScript, Python)
 - **VS Code Extension**: IDE integration for real-time drift detection
 
-## Phase 1 Scope
+### Phase 1 Scope
 
 - TypeScript-only analysis
 - Import graph extraction
@@ -21,167 +38,324 @@ DriftGuard is a modular system for detecting architectural drift in codebases, w
 - Basic drift metrics
 - Memgraph graph database backend
 
-## Development
+---
 
-### Setup
+## Prerequisites
 
-Due to Windows symlink limitations, install dependencies in each package individually:
+Before setting up DriftGuard, ensure the following are available on your system:
+
+- **Node.js >= 18.0.0** – Check with `node --version`
+- **pnpm** (recommended) or **npm** – The monorepo uses pnpm workspaces. Install pnpm with `npm install -g pnpm`.
+- **Memgraph** *(optional)* – Graph database backend. If not running, the engine falls back to a mock graph. See [Memgraph installation docs](https://memgraph.com/docs/getting-started).
+- **VS Code** with the **Extension Development** tools – Required to run the extension in development mode (press F5).
+
+---
+
+## Development Setup
 
 ```bash
-# Install dependencies for each package
+# Clone the repository
+git clone https://github.com/adrianmikula/DriftGuard.git
+cd DriftGuard
+
+# Install root-level dev dependencies
+npm install
+
+# Install dependencies in each package
+# (pnpm workspace symlinks may not work on all platforms)
 cd packages/core-engine && npm install
 cd ../language-typescript && npm install
 cd ../language-python && npm install
 cd ../vscode-extension && npm install
+cd ../..
 ```
 
-### Configuration
+> **Note**: Due to platform symlink limitations (e.g. Windows), dependencies must be installed in each package individually rather than relying on workspace hoisting.
+
+---
+
+## Configuration
 
 DriftGuard uses two configuration files:
 
-1. **`.env`** – Stores sensitive credentials (never commit to git)
-   - `MEMGRAPH_USERNAME` (required)
-   - `MEMGRAPH_PASSWORD` (required)
-   - `MEMGRAPH_URI` (optional; defaults to `bolt://localhost:7687`)
-   - `ENGINE_URL` (optional; defaults to `http://localhost:3000`)
+### `.env` – Sensitive credentials (never commit to git)
 
-   Copy `.env.example` to `.env` and fill in your credentials.
-
-2. **`.driftguard/config.json`** – Main configuration (committed to repo)
-   - Layer definitions (`layers`)
-   - Analyzer settings (`analyzer.fileExtensions`)
-   - File discovery patterns (`fileDiscovery`)
-   - Rule enablement and severity (`rules`)
-   - Database URI non-sensitive (`database.uri`)
-   - Engine URL (`engine.url`)
-
-   The default config shipped with DriftGuard provides sensible defaults for a typical TypeScript project.
-
-### Running the CLI
+Copy `.env.example` to `.env` and fill in your values:
 
 ```bash
-cd packages/core-engine
-npm run cli <workspace-path> [--config <custom-config-path>]
+cp .env.example .env
 ```
 
-The CLI loads configuration from the workspace root (or the path specified via `--config`). It requires valid database credentials in the environment (`.env` or exported).
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `MEMGRAPH_USERNAME` | Yes | — | Memgraph database username |
+| `MEMGRAPH_PASSWORD` | Yes | — | Memgraph database password |
+| `MEMGRAPH_URI` | No | `bolt://localhost:7687` | Memgraph connection URI |
+| `ENGINE_URL` | No | `http://localhost:3000` | Core engine HTTP server URL |
 
-Config precedence: environment variables > `--config` flag > workspace `.driftguard/config.json`.
+### `.driftguard/config.json` – Project configuration (committed to repo)
 
-### VS Code Extension
+Controls layer definitions, analyzer settings, file discovery, rule enablement, and severity. The shipped defaults work for a typical TypeScript project.
 
-The extension respects the same configuration file and also supports VS Code workspace settings under the `driftguard.` namespace (e.g., `driftguard.engineUrl`). Settings override config file values.
+| Key | Description |
+|---|---|
+| `layers` | Named layer definitions with path patterns |
+| `analyzer.fileExtensions` | File types to include in analysis |
+| `fileDiscovery` | Glob patterns for file discovery |
+| `rules` | Rule enablement and severity per rule ID |
+| `database.uri` | Non-sensitive database URI (overridden by `.env`) |
+| `engine.url` | Engine server URL |
+
+Config precedence: **environment variables** > `--config` flag > workspace `.driftguard/config.json`.
+
+### VS Code workspace settings
+
+The extension also supports VS Code workspace settings under the `driftguard.` namespace:
 
 ```json
 // .vscode/settings.json
 {
-  "driftguard.engineUrl": "http://localhost:3000"
+  "driftguard.engineUrl": "http://localhost:3000",
+  "driftguard.timeoutMs": 30000
 }
 ```
 
-### Building
+VS Code settings override config file values.
+
+---
+
+## Building the Project
+
+Each package must be built individually. Build `core-engine` and `language-typescript` before `vscode-extension`, as the extension depends on a packed tarball of the core engine.
 
 ```bash
-# Build individual packages
 cd packages/core-engine && npm run build
 cd ../language-typescript && npm run build
 cd ../language-python && npm run build
 cd ../vscode-extension && npm run build
 ```
 
-### Running the Core Engine CLI
+To watch for changes during development:
+
+```bash
+# In separate terminals:
+cd packages/core-engine && npm run watch
+cd packages/vscode-extension && npm run watch
+```
+
+---
+
+## Running / Debugging the Core Engine
+
+### CLI mode
 
 ```bash
 cd packages/core-engine
 npm run cli <workspace-path>
+# With a custom config path:
+npm run cli <workspace-path> -- --config <custom-config-path>
 ```
 
-Environment variables (optional):
-- `MEMGRAPH_URI`: Memgraph connection URI (default: bolt://localhost:7687)
-- `MEMGRAPH_USERNAME`: Memgraph username (default: memgraph)
-- `MEMGRAPH_PASSWORD`: Memgraph password (default: memgraph)
+### HTTP server mode
 
-### VS Code Extension Development
+```bash
+cd packages/core-engine
+npm run cli <workspace-path> -- --server --port 3000
+```
 
-1. Open the `packages/vscode-extension` folder in VS Code
-2. Press F5 to launch the extension in a new VS Code window
-3. Use the commands from the Command Palette:
+The engine will listen on `http://localhost:3000` and expose a REST API consumed by the VS Code extension.
+
+### With the Node.js debugger
+
+```bash
+cd packages/core-engine
+npm run build
+node --inspect-brk dist/cli/index.js <workspace-path>
+```
+
+Then attach VS Code's debugger (or Chrome DevTools at `chrome://inspect`) to the process.
+
+### VS Code launch configuration
+
+The root `.vscode/launch.json` includes a `Run Extension` configuration that builds and launches the extension host. To debug the core engine separately, add a configuration like this to `.vscode/launch.json`:
+
+```json
+{
+  "name": "Debug Core Engine CLI",
+  "type": "node",
+  "request": "launch",
+  "program": "${workspaceFolder}/packages/core-engine/dist/cli/index.js",
+  "args": ["${workspaceFolder}"],
+  "preLaunchTask": "build-extension",
+  "outFiles": ["${workspaceFolder}/packages/core-engine/dist/**/*.js"]
+}
+```
+
+---
+
+## Running / Debugging the VS Code Extension
+
+1. **Build the core engine first** (the extension bundles a packed tarball):
+   ```bash
+   cd packages/core-engine && npm run build
+   ```
+
+2. **Open the workspace root** (`DriftGuard/`) in VS Code.
+
+3. **Press F5** (or run *Run Extension* from the Run & Debug panel). This launches an **Extension Development Host** window with DriftGuard loaded.
+
+4. **Start the engine server** in a separate terminal so the extension can communicate with it:
+   ```bash
+   cd packages/core-engine && npm run cli <your-workspace-path> -- --server --port 3000
+   ```
+
+5. In the Extension Development Host, open the Command Palette (`Ctrl+Shift+P`) and run:
    - `DriftGuard: Scan Workspace`
    - `DriftGuard: Scan Current File`
+   - `DriftGuard: Check Engine Status`
+   - `DriftGuard: Open Configuration`
+
+> **Tip**: The extension uses `driftguard.engineUrl` (default `http://localhost:3000`) to reach the engine. If the engine is not running, commands will report a connection error.
+
+---
 
 ## Testing
 
-DriftGuard uses Vitest for unit testing across all packages. Each package has its own test configuration and test files located in `src/__tests__` directories.
+DriftGuard uses [Vitest](https://vitest.dev/) for unit testing across all packages. Test files live in `src/__tests__` directories within each package.
 
-### Running Tests
-
-To run tests for all packages:
+### Running all tests
 
 ```bash
-# Run all tests from the root (using workspaces)
 npm test
 ```
 
-To run tests for a specific package:
+### Running tests for a specific package
 
 ```bash
-# Example: run tests for core-engine only
-cd packages/core-engine
-npm test
+cd packages/core-engine && npm test
 ```
 
-#### Fast Test Loop
+### Fast test loop (recommended during development)
 
-For rapid development feedback, AI agents can use the **fast test loop** which runs a subset of unit tests that complete in under 10 seconds:
+Runs unit tests only — no external dependencies, completes in under 10 seconds:
 
 ```bash
-# Run fast tests only (unit tests without external dependencies)
 npm run test:fast
 ```
 
-The fast test loop includes:
+Includes:
 - Core engine unit tests (rules, config) with mocked dependencies
 - Language package unit tests (TypeScript rules, analyzer stubs)
-- Excludes integration tests, graph client tests, scanner tests, and VS Code extension tests
 
-This provides quick validation during development without waiting for slower integration tests.
+Excludes: integration tests, graph client tests, scanner tests, VS Code extension tests.
 
-### Test Infrastructure
-
-- **Core Engine**: Includes tests for GraphClient (with mocked neo4j-driver), RuleEngine, ScannerOrchestrator, and utility functions
-- **VS Code Extension**: Tests for EngineClient, command registration, and ArchitectureTreeProvider (with mocked VS Code API)
-- **Language-TypeScript**: Tests for ImportGraphAnalyzer, CircularDependencyRule, and BoundaryViolationRule
-- **Language-Python**: Stub tests for Phase 1 (to be expanded in Phase 2)
-
-### Mocking Strategy
-
-- **Neo4j Driver**: Manual mocks in `packages/core-engine/src/__mocks__/neo4j-driver.ts` using Vitest's `vi.mock()`
-- **VS Code API**: Manual mocks in `packages/vscode-extension/src/__mocks__/vscode.ts`
-- **Test Utilities**: Shared helpers in `packages/core-engine/src/__tests__/utils.ts`
-
-### Coverage
-
-Test coverage reports are generated automatically when running tests. To view the coverage report:
+### Test coverage
 
 ```bash
 npm test -- --coverage
 ```
 
-The HTML report will be available in each package's `coverage/` directory.
+HTML reports are generated in each package's `coverage/` directory.
+
+### Test infrastructure
+
+- **Core Engine**: GraphClient (mocked neo4j-driver), RuleEngine, ScannerOrchestrator, utility functions
+- **VS Code Extension**: EngineClient, command registration, ArchitectureTreeProvider (mocked VS Code API)
+- **Language-TypeScript**: ImportGraphAnalyzer, CircularDependencyRule, BoundaryViolationRule
+- **Language-Python**: Stub tests for Phase 1 (expanded in Phase 2)
+
+### Mocking strategy
+
+- **Neo4j Driver**: Manual mock at `packages/core-engine/src/__mocks__/neo4j-driver.ts` via `vi.mock()`
+- **VS Code API**: Manual mock at `packages/vscode-extension/src/__mocks__/vscode.ts`
+- **Test Utilities**: Shared helpers at `packages/core-engine/src/__tests__/utils.ts`
+
+---
+
+## Publishing the VS Code Extension
+
+The extension is published to the [VS Code Marketplace](https://marketplace.visualstudio.com/) under the `CodeMedic` publisher.
+
+### One-time setup
+
+1. Install the `vsce` packaging tool:
+   ```bash
+   npm install -g @vscode/vsce
+   ```
+
+2. Create a publisher account at [Azure DevOps](https://dev.azure.com/) if you don't have one.
+
+3. Generate a **Personal Access Token (PAT)** in Azure DevOps:
+   - Organization: `All accessible organizations`
+   - Scopes: `Marketplace → Manage`
+
+4. Log in with `vsce`:
+   ```bash
+   vsce login CodeMedic
+   # Paste your PAT when prompted
+   ```
+
+### Packaging
+
+```bash
+cd packages/vscode-extension
+vsce package
+# Produces: driftguard-<version>.vsix
+```
+
+### Publishing
+
+```bash
+cd packages/vscode-extension
+vsce publish
+# To bump the version and publish in one step:
+vsce publish patch   # or minor / major
+```
+
+### Installing a local build
+
+```bash
+code --install-extension packages/vscode-extension/driftguard-0.1.0.vsix
+```
+
+---
 
 ## Packages
 
-- `core-engine`: Core scanning engine and graph management
-- `vscode-extension`: VS Code extension
-- `language-typescript`: TypeScript analyzer
-- `language-python`: Python analyzer (stub for Phase 1)
+| Package | Description |
+|---|---|
+| `core-engine` | Core scanning engine, graph management, CLI, HTTP server |
+| `language-typescript` | TypeScript import graph analyzer and rules |
+| `language-python` | Python analyzer (stub for Phase 1, expanded in Phase 2) |
+| `vscode-extension` | VS Code IDE integration |
 
-## Next Steps
+---
 
-- Implement HTTP/IPC communication between VS Code extension and core engine
-- Add file discovery logic to CLI
-- Implement actual rule registration in TypeScript analyzer
-- Add configuration UI for layer rules
-- Integrate Memgraph for persistent graph storage
-- Add vector DB support for semantic drift detection (Phase 2)
-- Implement Python analyzer (Phase 2)
+## Troubleshooting
+
+### Engine server not reachable
+
+- Confirm the engine is running: `curl http://localhost:3000/health`
+- Check `driftguard.engineUrl` in VS Code settings or `.driftguard/config.json`
+- Ensure the engine built successfully before starting: `cd packages/core-engine && npm run build`
+
+### Memgraph connection errors
+
+- If Memgraph is not installed or not running, the engine falls back to a mock in-memory graph — no action needed for local development.
+- To connect a real Memgraph instance, set `MEMGRAPH_URI`, `MEMGRAPH_USERNAME`, and `MEMGRAPH_PASSWORD` in `.env`.
+
+### Extension not loading in Extension Development Host
+
+- Ensure `packages/vscode-extension` has been built (`npm run build`) before pressing F5.
+- The VS Code launch config uses `--extensionDevelopmentPath` pointing to `packages/vscode-extension`.
+- Check the **Extension Host** output panel for errors.
+
+### `npm install` fails in a package
+
+- Try deleting `node_modules` and `package-lock.json` in the affected package, then re-run `npm install`.
+- Ensure your Node.js version meets the `>=18.0.0` requirement: `node --version`.
+
+### Tests failing unexpectedly
+
+- Run `npm run test:fast` first to isolate unit test failures from integration issues.
+- Ensure all packages are built before running tests that depend on compiled output.

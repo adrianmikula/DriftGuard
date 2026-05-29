@@ -1,3 +1,7 @@
+import * as http from 'http';
+import * as https from 'https';
+import { URL } from 'url';
+
 export interface ScanRequest {
   workspacePath: string;
   language: string;
@@ -51,67 +55,76 @@ export class EngineClient {
     }
   }
 
-  private async httpPost<T>(endpoint: string, body: unknown): Promise<T> {
-    const url = `${this.engineUrl}${endpoint}`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+  private async httpRequest<T>(
+    endpoint: string,
+    method: 'GET' | 'POST',
+    body?: unknown
+  ): Promise<T> {
+    const url = new URL(endpoint, this.engineUrl);
+    const isHttps = url.protocol === 'https:';
+    const client = isHttps ? https : http;
 
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-        signal: controller.signal,
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+    };
+    if (body) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const options: http.RequestOptions = {
+      hostname: url.hostname,
+      port: url.port || (isHttps ? 443 : 80),
+      path: url.pathname + url.search,
+      method,
+      headers,
+      timeout: this.timeoutMs,
+    };
+
+    return new Promise((resolve, reject) => {
+      const req = client.request(options, (res) => {
+        let data = '';
+
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+
+        res.on('end', () => {
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            try {
+              const parsed = JSON.parse(data);
+              resolve(parsed as T);
+            } catch (e) {
+              reject(new Error(`Invalid JSON response: ${e}`));
+            }
+          } else {
+            reject(new Error(`HTTP ${res.statusCode}: ${data}`));
+          }
+        });
       });
 
-      clearTimeout(timeoutId);
+      req.on('error', (error) => {
+        reject(new Error(`Connection failed: ${error.message}. Is the engine server running at ${this.engineUrl}?`));
+      });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error(`Request timeout after ${this.timeoutMs}ms`));
+      });
+
+      if (body) {
+        req.write(JSON.stringify(body));
       }
 
-      return response.json() as Promise<T>;
-    } catch (error: any) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
-        throw new Error(`Request timeout after ${this.timeoutMs}ms`);
-      }
-      throw error;
-    }
+      req.end();
+    });
+  }
+
+  private async httpPost<T>(endpoint: string, body: unknown): Promise<T> {
+    return this.httpRequest<T>(endpoint, 'POST', body);
   }
 
   private async httpGet<T>(endpoint: string): Promise<T> {
-    const url = `${this.engineUrl}${endpoint}`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
-
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-
-      return response.json() as Promise<T>;
-    } catch (error: any) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
-        throw new Error(`Request timeout after ${this.timeoutMs}ms`);
-      }
-      throw error;
-    }
+    return this.httpRequest<T>(endpoint, 'GET');
   }
 
   async scan(request: ScanRequest): Promise<ScanResult> {

@@ -1,10 +1,15 @@
 import * as vscode from 'vscode';
+import * as cp from 'child_process';
+import * as path from 'path';
+import * as fs from 'fs';
 import { EngineClient } from './client/engine-client';
 import { registerCommands } from './commands';
 import { ArchitectureTreeProvider } from './ui/architecture-tree';
 
 let engineClient: EngineClient;
 let statusBarItem: vscode.StatusBarItem;
+let engineProcess: cp.ChildProcess | undefined;
+let treeProvider: ArchitectureTreeProvider | undefined;
 
 function createEngineClient(): EngineClient {
   const config = vscode.workspace.getConfiguration('driftguard');
@@ -25,11 +30,13 @@ export function activate(context: vscode.ExtensionContext) {
   statusBarItem.show();
   context.subscriptions.push(statusBarItem);
 
-  // Perform health check asynchronously (don't block activation)
-  checkEngineHealth().catch(console.error);
+  // Start engine immediately on activation, then verify health
+  startEngineServer().catch((error) => {
+    console.warn(`[DriftGuard] Engine auto-start failed: ${error}`);
+  });
 
   // Initialize tree provider
-  const treeProvider = new ArchitectureTreeProvider(engineClient);
+  treeProvider = new ArchitectureTreeProvider(engineClient);
   const treeView = vscode.window.createTreeView('driftguardArchitectureView', {
     treeDataProvider: treeProvider,
   });
@@ -52,7 +59,9 @@ export function activate(context: vscode.ExtensionContext) {
   const configWatcher = vscode.workspace.onDidChangeConfiguration(e => {
     if (e.affectsConfiguration('driftguard')) {
       engineClient = createEngineClient();
-      treeProvider.updateClient(engineClient);
+      if (treeProvider) {
+        treeProvider.updateClient(engineClient);
+      }
       checkEngineHealth().catch(console.error);
     }
   });
@@ -68,13 +77,118 @@ async function checkEngineHealth() {
       statusBarItem.color = undefined; // Use default color
     } else {
       statusBarItem.text = '$(warning) DriftGuard: Disconnected';
-      statusBarItem.tooltip = 'DriftGuard engine is not reachable. Ensure the server is running.';
+      statusBarItem.tooltip = 'DriftGuard engine is not reachable. Attempting to start...';
       statusBarItem.color = undefined;
+      // Try to auto-start the engine
+      await startEngineServer();
     }
   } catch (error) {
     statusBarItem.text = '$(error) DriftGuard: Error';
-    statusBarItem.tooltip = `Error checking engine: ${error}`;
+    statusBarItem.tooltip = `Error checking engine: ${error}. Attempting to start...`;
     statusBarItem.color = undefined;
+    // Try to auto-start the engine
+    await startEngineServer();
+  }
+}
+
+function findEngineCliPath(): string | undefined {
+  // Try to find the engine CLI in the monorepo structure
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (!workspaceFolders || workspaceFolders.length === 0) {
+    console.log('[DriftGuard] No workspace folders open');
+    return undefined;
+  }
+
+  const workspaceRoot = workspaceFolders[0].uri.fsPath;
+  console.log(`[DriftGuard] Workspace root: ${workspaceRoot}`);
+
+  // Check if we're in the DriftGuard monorepo
+  const possiblePaths = [
+    path.join(workspaceRoot, 'packages', 'core-engine', 'dist', 'cli', 'index.js'),
+    path.join(workspaceRoot, '..', 'core-engine', 'dist', 'cli', 'index.js'),
+    path.join(workspaceRoot, '..', '..', 'packages', 'core-engine', 'dist', 'cli', 'index.js'),
+  ];
+
+  for (const cliPath of possiblePaths) {
+    const resolvedPath = path.resolve(cliPath);
+    const exists = fs.existsSync(resolvedPath);
+    console.log(`[DriftGuard] Checking: ${resolvedPath} -> ${exists ? 'FOUND' : 'NOT FOUND'}`);
+    if (exists) {
+      return resolvedPath;
+    }
+  }
+
+  return undefined;
+}
+
+async function startEngineServer(): Promise<void> {
+  if (engineProcess) {
+    // Engine already running
+    return;
+  }
+
+  const engineCliPath = findEngineCliPath();
+  if (!engineCliPath) {
+    vscode.window.showWarningMessage(
+      'DriftGuard engine not found. Please start the engine manually: cd packages/core-engine && node dist/cli/index.js <workspace> --server --port 3000'
+    );
+    return;
+  }
+
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (!workspaceFolders || workspaceFolders.length === 0) {
+    vscode.window.showWarningMessage('No workspace folder open. Cannot start DriftGuard engine.');
+    return;
+  }
+
+  const workspacePath = workspaceFolders[0].uri.fsPath;
+  const port = 3000;
+
+  vscode.window.showInformationMessage('Starting DriftGuard engine server...');
+
+  try {
+    engineProcess = cp.spawn('node', [engineCliPath, workspacePath, '--server', `--port ${port}`], {
+      detached: false,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    engineProcess.stdout?.on('data', (data) => {
+      console.log(`[DriftGuard Engine] ${data}`);
+    });
+
+    engineProcess.stderr?.on('data', (data) => {
+      console.error(`[DriftGuard Engine] ${data}`);
+    });
+
+    engineProcess.on('error', (error) => {
+      vscode.window.showErrorMessage(`Failed to start DriftGuard engine: ${error.message}`);
+      engineProcess = undefined;
+    });
+
+    engineProcess.on('exit', (code) => {
+      console.log(`DriftGuard engine exited with code ${code}`);
+      engineProcess = undefined;
+    });
+
+    // Wait a moment for the server to start, then check health
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    await checkEngineHealth();
+
+    // Refresh the tree view after engine starts so connection error items are replaced with actual data
+    if (treeProvider) {
+      treeProvider.refresh();
+    }
+
+  } catch (error) {
+    vscode.window.showErrorMessage(`Error starting DriftGuard engine: ${error}`);
+    engineProcess = undefined;
+  }
+}
+
+export function deactivate(): void {
+  if (engineProcess) {
+    engineProcess.kill();
+    engineProcess = undefined;
   }
 }
 

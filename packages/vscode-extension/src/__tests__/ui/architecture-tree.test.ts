@@ -55,6 +55,7 @@ describe('ArchitectureTreeProvider', () => {
   beforeEach(() => {
     engineClient = new EngineClient('http://localhost:3000');
     treeProvider = new ArchitectureTreeProvider(engineClient);
+    vi.clearAllMocks();
   });
 
   describe('getTreeItem', () => {
@@ -107,12 +108,33 @@ describe('ArchitectureTreeProvider', () => {
       const importGraphNode = children.find((n: any) => n.contextValue === 'import-graph');
 
       expect(violationsNode).toBeDefined();
-      expect(violationsNode.label).toBe('Violations');
+      expect(violationsNode!.label).toBe('Violations');
       expect(importGraphNode).toBeDefined();
-      expect(importGraphNode.label).toBe('Import Graph');
+      expect(importGraphNode!.label).toBe('Import Graph');
     });
 
-    it('should return empty array for violations sub-tree', async () => {
+    it('should return violations when engine returns data', async () => {
+      vi.spyOn(engineClient, 'getViolations').mockResolvedValue([
+        { ruleId: 'TEST001', severity: 'error', message: 'Test violation', location: { file: 'test.ts' } },
+      ]);
+
+      const violationsNode: ArchitectureNode = {
+        label: 'Violations',
+        collapsibleState: 1,
+        contextValue: 'violations',
+      };
+
+      const children = await treeProvider.getChildren(violationsNode);
+
+      expect(Array.isArray(children)).toBe(true);
+      expect(children).toHaveLength(1);
+      expect(children[0].label).toContain('TEST001');
+      expect(children[0].contextValue).toBe('violation');
+    });
+
+    it('should return empty array for violations when engine returns no violations', async () => {
+      vi.spyOn(engineClient, 'getViolations').mockResolvedValue([]);
+
       const violationsNode: ArchitectureNode = {
         label: 'Violations',
         collapsibleState: 1,
@@ -125,7 +147,61 @@ describe('ArchitectureTreeProvider', () => {
       expect(children).toHaveLength(0);
     });
 
-    it('should return empty array for import-graph sub-tree', async () => {
+    it('should return empty array and log warning when violations fetch fails with connection error', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.spyOn(engineClient, 'getViolations').mockRejectedValue(new Error('Connection failed: ECONNREFUSED'));
+
+      const violationsNode: ArchitectureNode = {
+        label: 'Violations',
+        collapsibleState: 1,
+        contextValue: 'violations',
+      };
+
+      const children = await treeProvider.getChildren(violationsNode);
+
+      expect(Array.isArray(children)).toBe(true);
+      expect(children).toHaveLength(0);
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Engine not running'));
+      warnSpy.mockRestore();
+    });
+
+    it('should show error message when violations fetch fails with non-connection error', async () => {
+      vi.spyOn(engineClient, 'getViolations').mockRejectedValue(new Error('Some other error'));
+
+      const violationsNode: ArchitectureNode = {
+        label: 'Violations',
+        collapsibleState: 1,
+        contextValue: 'violations',
+      };
+
+      const children = await treeProvider.getChildren(violationsNode);
+
+      expect(Array.isArray(children)).toBe(true);
+      expect(children).toHaveLength(1);
+      expect(children[0].label).toBe('Error: Some other error');
+      expect(children[0].contextValue).toBe('error');
+    });
+
+    it('should return imports when engine returns data', async () => {
+      vi.spyOn(engineClient, 'getImportGraph').mockResolvedValue({ imports: [{ from: 'a.ts', to: 'b.ts' }] });
+
+      const importGraphNode: ArchitectureNode = {
+        label: 'Import Graph',
+        collapsibleState: 1,
+        contextValue: 'import-graph',
+      };
+
+      const children = await treeProvider.getChildren(importGraphNode);
+
+      expect(Array.isArray(children)).toBe(true);
+      expect(children).toHaveLength(1);
+      expect(children[0].label).toBe('a.ts → b.ts');
+      expect(children[0].contextValue).toBe('import');
+    });
+
+    it('should return empty array for import-graph when engine returns no imports', async () => {
+      vi.spyOn(engineClient, 'getImportGraph').mockResolvedValue({ imports: [] });
+
       const importGraphNode: ArchitectureNode = {
         label: 'Import Graph',
         collapsibleState: 1,
@@ -136,6 +212,24 @@ describe('ArchitectureTreeProvider', () => {
 
       expect(Array.isArray(children)).toBe(true);
       expect(children).toHaveLength(0);
+    });
+
+    it('should return empty array and log warning when import-graph fetch fails with connection error', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.spyOn(engineClient, 'getImportGraph').mockRejectedValue(new Error('fetch failed'));
+
+      const importGraphNode: ArchitectureNode = {
+        label: 'Import Graph',
+        collapsibleState: 1,
+        contextValue: 'import-graph',
+      };
+
+      const children = await treeProvider.getChildren(importGraphNode);
+
+      expect(Array.isArray(children)).toBe(true);
+      expect(children).toHaveLength(0);
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Engine not running'));
+      warnSpy.mockRestore();
     });
 
     it('should return empty array for unknown context values', async () => {

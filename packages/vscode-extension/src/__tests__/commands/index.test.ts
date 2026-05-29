@@ -65,14 +65,14 @@ describe('Commands', () => {
   });
 
   describe('registerCommands', () => {
-    it('should register both scan commands', () => {
+    it('should register all commands', () => {
       registerCommands(context, engineClient, treeProvider);
-      expect(vscode.commands.registerCommand).toHaveBeenCalledTimes(2);
+      expect(vscode.commands.registerCommand).toHaveBeenCalledTimes(3);
     });
 
-    it('should add both commands to context subscriptions', () => {
+    it('should add all commands to context subscriptions', () => {
       registerCommands(context, engineClient, treeProvider);
-      expect(context.subscriptions).toHaveLength(2);
+      expect(context.subscriptions).toHaveLength(3);
     });
 
     it('should register driftguard.scanWorkspace command', () => {
@@ -85,6 +85,12 @@ describe('Commands', () => {
       registerCommands(context, engineClient, treeProvider);
       const calls = (vscode.commands.registerCommand as any).mock.calls;
       expect(calls[1][0]).toBe('driftguard.scanFile');
+    });
+
+    it('should register driftguard.openConfig command', () => {
+      registerCommands(context, engineClient, treeProvider);
+      const calls = (vscode.commands.registerCommand as any).mock.calls;
+      expect(calls[2][0]).toBe('driftguard.openConfig');
     });
   });
 

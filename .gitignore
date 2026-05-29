@@ -19,6 +19,8 @@ Thumbs.db
 
 # IDE
 .vscode/
+!.vscode/
+!packages/vscode-extension/.vscode/
 .idea/
 *.swp
 *.swo
